@@ -6,7 +6,6 @@ Created on Thu Aug  2 16:27:01 2018
 """
 import numpy as np
 from numba import jit
-import time
 from netCDF4 import Dataset
 
 def find_down(array,value):
@@ -14,9 +13,6 @@ def find_down(array,value):
         array = [n-value for n in array]
         idx = np.array([n for n in array if n<0]).argmax()
     else:
-        print ' nan'
-        print value, array[0]
-        print np.min(array),np.max(array)
         idx = np.nan
     return idx  
 
@@ -32,26 +28,20 @@ dirRead = '/projects/0/palaeo-parcels/POP/POPres/0.1degree/particlefiles/'
 
 dirWrite = '/projects/0/palaeo-parcels/POP/POPres/0.1degree/particlefiles/sp%d_dd%d/'%(int(sp),int(dd))
 
-
-print 'dirWrite:   ',dirWrite
-
 adv = True
 nadv = False#True
 
 #%%
-#print dirRead + 'sp%d_dd%d/'%(int(sp),int(dd)) + 'concatenated_sp%d_dd%d_res%d_tempres%d.nc'%(int(sp),int(dd),res,tempres)
 pfile = Dataset(dirRead + 'sp%d_dd%d/'%(int(sp),int(dd)) + 'concatenated_sp%d_dd%d_res%d_tempres'%(int(sp),int(dd),res)+str(tempres)+'.nc')
-# + 'concatenated_sp%d_dd%d_res%d.nc'%(int(sp),int(dd),res) )
+
 if(nadv):
     pfilefix = Dataset(dirRead + 'surface/' + 'concatenatedsurface_dd10_res1.nc')
- #+ 'concatenatedsurface_dd%d_res%d.nc'%(int(dd),res) )
 
 #%%
 minlon = max(0, min(pfile['lon0'][:]))
 maxlon = max(pfile['lon0'][:])+1
 minlat = min(pfile['lat0'][:])
 maxlat = max(pfile['lat0'][:])+1
-print 'ml,ml: ',minlat, maxlat
 #%% Now loop over all regions to define the T matrix
     
 #Define the grid at the bottom:
@@ -111,10 +101,8 @@ def construct_tsfix(tsfixtemp, tsfixsalin, fixlon, fixlat,  vLons, vLats, Lons, 
     maxlentsfix = 0
     
     for i in range(sle):
-        print 'here'
-        print i
-        lo = find_down(Lons,fixlon[i]);print lo; lon = Lons[lo];
-        la = find_down(Lats,fixlat[i]);print la; lat = Lats[la];
+        lo = find_down(Lons,fixlon[i]);lon = Lons[lo];
+        la = find_down(Lats,fixlat[i]); lat = Lats[la];
         
         j = np.where(np.logical_and(vLons==lon,vLats==lat))[0][0]
 
@@ -144,7 +132,6 @@ if(nadv):
     salinfix = pfilefix['salin'][:,:]
     tempfix = pfilefix['temp'][:,:]
 
-start = time.time() 
 tstemp = np.empty((len(vLons),), dtype=object)  
 for i in range(len(tstemp)):tstemp[i] = [];
 tssalin = np.empty((len(vLons),), dtype=object)  
@@ -160,43 +147,23 @@ for i in range(len(tslon0)):tslon0[i] = [];
 tsage = np.empty((len(vLons),), dtype=object)  
 for i in range(len(tsage)):tsage[i] = [];
 
-
-
-#print Lons
-#print 'wh  ',np.where(vLons==-0.5)
-#print np.unique(lon0)
-#print np.sum(lon0==0)
-
 tstemp, tssalin, tslon, tslat, tslon0, tslat0, tsage, maxlents, tslens =  construct_ts(tstemp, tssalin, tslon, tslat, tslon0, tslat0, tsage, lat0, lon0, vLons, vLats, Lons, Lats, temp, salin, lonadv, latadv, ageadv)
-print 'time \'ts\' (minutes): ', ((time.time()-start)/60.)
 
 ts = np.array(ts)
-if(nadv):
-    start = time.time()   
+if(nadv):   
     tsfixtemp = np.empty((len(vLons),), dtype=object)  
     for i in range(len(tsfixtemp)):tsfixtemp[i] = [];
     tsfixsalin = np.empty((len(vLons),), dtype=object)  
     for i in range(len(tsfixsalin)):tsfixsalin[i] = [];
-    
     tsfixtemp, tsfixsalin, maxlentsfix =  construct_tsfix(tsfixtemp, tsfixsalin, lonfix,latfix,  vLons, vLats, Lons, Lats, tempfix, salinfix)
-print 'time \'tsfix\' (minutes): ', ((time.time()-start)/60.)
 
 maxlents = 0
 
 for i in range(len(tstemp)):
 
     if(len(tstemp[i])>0): 
-#        print 'tstemp: ',len(tstemp[i])
-#        print 'vLon:  ',vLons[i]
-#        print 'vLat:  ',vLats[i]
         maxlents = max(maxlents,len(tstemp[i]))
-#        print 'j:   ',i,'     maxlents:   ',maxlents  
-        
-print 'maxlents:', maxlents
-if(nadv):
-    print 'maxlentsfix:', maxlentsfix
   
-print 'dirWrite:   ',dirWrite
 dataset = Dataset(dirWrite  + 'timeseries_per_location_ddeg%d_sp%d_dd%d'%(ddeg, int(sp),int(dd))+'_tempres'+str(tempres)+'.nc','w',format='NETCDF4_CLASSIC')
 
 traj = dataset.createDimension('tslen', maxlents)
@@ -215,8 +182,6 @@ temps = dataset.createVariable('temp', np.float64, ('vLons','tslen',))
 salins = dataset.createVariable('salin', np.float64, ('vLons','tslen',))
 lat = dataset.createVariable('lat', np.float64, ('vLons','tslen',))
 lon = dataset.createVariable('lon', np.float64, ('vLons','tslen',))
-#lats0 = dataset.createVariable('lat0', np.float64, ('vLons','tslen',))
-#lons0 = dataset.createVariable('lon0', np.float64, ('vLons','tslen',))
 ages = dataset.createVariable('age', np.float64, ('vLons','tslen',))
 
 tslenss = dataset.createVariable('tslens', np.float64, ('vLons',))
@@ -237,14 +202,11 @@ for j in range(len(vLons)):
         salins[j,:le] = np.array(tssalin[j])
         lon[j,:le] = np.array(tslon[j])
         lat[j,:le] = np.array(tslat[j])
-#        lons0[j,:le] = np.array(tslon0[j])
-#        lats0[j,:le] = np.array(tslat0[j])
         ages[j,:le] = np.array(tsage[j])
 
     if(nadv):
         fle = len(tsfixtemp[j])
         if(fle>0):
-#            print fle
             fixtemps[j,:fle] = np.array(tsfixtemp[j])
             fixsalins[j,:fle] = np.array(tsfixsalin[j])
 

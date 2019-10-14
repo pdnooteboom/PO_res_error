@@ -30,7 +30,6 @@ def snapshotfunction(days):
         if(day<=months[0]): month = 1; bo = False; 
         for m in range(1,len(months)):     
             if(day<=np.sum(months[:m+1]) and bo): day -= np.sum(months[:m]); month = m+1; bo = False;
-        #s = str(year) + format(month, '02d') + format(day, '02d')
         if(len('%.0f'%day)<2): 
             sday = '0' + '%.0f'%day
         else: 
@@ -56,7 +55,7 @@ print('posidx: ',posidx)
 latsz = np.load('release_loc/coor/lats_id%d_dd%d.npy'%(posidx,int(dd)))
 lonsz = np.load( 'release_loc/coor/lons_id%d_dd%d.npy'%(posidx,int(dd)))
 
-latsz = latsz; lonsz= lonsz;#np.array([latsz[0]]); lonsz = np.array([lonsz[0]]);
+latsz = latsz; lonsz= lonsz;
 
 print('here0 : ',latsz.shape, lonsz.shape)
 print('latsz: ' , np.min(latsz), np.max(latsz))
@@ -67,7 +66,7 @@ if(not lonsz.size):
 
 dep = dd * np.ones(latsz.shape)
 
-times = np.array([datetime(1975, 1, 2) - delta(days=(x+0.5)) for x in range(0,365*5,3)])#int(365*8),3)])
+times = np.array([datetime(1975, 1, 2) - delta(days=(x+0.5)) for x in range(0,365*5,3)])
 time = np.empty(shape=(0));lons = np.empty(shape=(0));lats = np.empty(shape=(0));
 for i in range(len(times)):
     lons = np.append(lons,lonsz)
@@ -79,7 +78,6 @@ for i in range(len(times)):
 def set_fieldset(snapshots, hormesh, sfile):
     ufiles = [dirread_POP+'tavg/' +'t.t0.1_42l_nccs01.0' + s + '.nc' for s in snapshots]
     env_files = [dirread_POP+'movie/'+'m.t0.1_42l_nccs01.0' + s + '.nc' for s in snapshots]
-    bfile = hormesh
 
     filenames = { 'U': {'lon': hormesh,
                         'lat': hormesh,
@@ -95,16 +93,14 @@ def set_fieldset(snapshots, hormesh, sfile):
                         'data':ufiles},  
                 'S' : {'lon': hormesh,
                         'lat': hormesh,
-#                        'depth': sfile,
                         'data':env_files},
                 'T' : {'lon': hormesh,
                         'lat': hormesh,
-#                        'depth': sfile,
                         'data':env_files},
                 'B' : {'lon': hormesh,
                         'lat': hormesh,
                         'depth': sfile,
-                        'data':hormesh}#, 
+                        'data':hormesh}
                 }
 
     variables = {'U': 'UVEL',
@@ -153,12 +149,6 @@ def set_fieldset(snapshots, hormesh, sfile):
 
     fieldset = FieldSet.from_pop(filenames, variables, dimensions, indices=indices, allow_time_extrapolation=False)
     
-    print('latitude and longitude ranges from the indices:')
-    print('longitude: ',fieldset.U.lon[0], fieldset.U.lon[-1])
-    print('latitude: ',np.max(fieldset.U.lat[0]), np.min(fieldset.U.lat[-1]))
-#    print(lonsz[0],latsz[0])
-    print('depth at bottom: ', fieldset.B[0,0,latsz[0], lonsz[0]])
-
     fieldset.U.vmax = 10    # set max of flow to 10 m/s
     fieldset.V.vmax = 10
     fieldset.W.vmax = 10
@@ -174,7 +164,6 @@ def periodicBC(particle, fieldSet, time):
         
 #Sink Kernel if only atsf is saved:
 def Sink(particle, fieldset, time):
-#    print("%f"%(particle.depth))
     if(particle.depth>fieldset.dwellingdepth):
         particle.depth = particle.depth + fieldset.sinkspeed * particle.dt
     elif(particle.depth<=fieldset.dwellingdepth and particle.depth>1):

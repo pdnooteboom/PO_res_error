@@ -2,6 +2,9 @@
 """
 Created on Thu Aug  2 16:27:01 2018
 
+This file reads the concatenated output and reshapes the output to a series of
+particles per location with a certain lon/lat.
+
 @author: nooteboom
 """
 import numpy as np

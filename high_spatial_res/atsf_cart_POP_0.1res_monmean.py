@@ -2,6 +2,10 @@
 """
 Created on Fri Oct 13 15:31:22 2017
 
+This script advects particles in the POP model. It releases particles at the bottom, 
+tracks back in time and writes the particles once they reach the depth which is
+determined by the variable 'dd.'
+
 @author: nooteboom
 """
 
@@ -27,14 +31,15 @@ dirwrite = '/projects/0/palaeo-parcels/POP/POPres/0.1degree/particlefiles/sp%d_d
 
 posidx = int(sys.argv[1]) #ID of the file to define latitude and longitude ranges
 
+# reslease location for this posidx:
 latsz = np.load('release_loc/coor/lats_id%d_dd%d.npy'%(posidx,int(dd)))
 lonsz = np.load( 'release_loc/coor/lons_id%d_dd%d.npy'%(posidx,int(dd)))
 
-latsz = latsz; lonsz= lonsz;#np.array([latsz[0]]); lonsz = np.array([lonsz[0]]);
+latsz = latsz; lonsz= lonsz;
 
-print 'here0 : ',latsz.shape, lonsz.shape
-print 'latsz: ' , np.min(latsz), np.max(latsz)
-print 'lonsz: ' , np.min(lonsz), np.max(lonsz)
+print('here0 : ',latsz.shape, lonsz.shape)
+print('latsz: ' , np.min(latsz), np.max(latsz))
+print('lonsz: ' , np.min(lonsz), np.max(lonsz))
 
 if(not lonsz.size):
     sys.exit("Only land in the run with this idx")
@@ -52,7 +57,6 @@ for i in range(len(times)):
 #%%
 def set_fieldset(files_highres, hormesh, sfile):
     ufiles = files_highres 
-    bfile = hormesh
 
     filenames = { 'U': {'lon': hormesh,
                         'lat': hormesh,
@@ -68,16 +72,14 @@ def set_fieldset(files_highres, hormesh, sfile):
                         'data':ufiles},  
                 'S' : {'lon': hormesh,
                         'lat': hormesh,
-#                        'depth': sfile,
                         'data':ufiles},
                 'T' : {'lon': hormesh,
                         'lat': hormesh,
-#                        'depth': sfile,
                         'data':ufiles},
                 'B' : {'lon': hormesh,
                         'lat': hormesh,
                         'depth': sfile,
-                        'data':hormesh}#, 
+                        'data':hormesh} 
                 }
 
     variables = {'U': 'UVEL',
@@ -87,9 +89,9 @@ def set_fieldset(files_highres, hormesh, sfile):
                  'S': 'SALT_5m',
                  'B':'BOT_DEP'}
 
-    dimensions = {'U':{'lon': 'U_LON_2D', 'lat': 'U_LAT_2D', 'depth': 'BOTTOM_GRIDCELL','time': 'time'},#
-                  'V': {'lon': 'U_LON_2D', 'lat': 'U_LAT_2D', 'depth': 'BOTTOM_GRIDCELL','time': 'time'},#
-                    'W': {'lon': 'U_LON_2D', 'lat': 'U_LAT_2D', 'depth': 'BOTTOM_GRIDCELL','time': 'time'},#
+    dimensions = {'U':{'lon': 'U_LON_2D', 'lat': 'U_LAT_2D', 'depth': 'BOTTOM_GRIDCELL','time': 'time'},
+                  'V': {'lon': 'U_LON_2D', 'lat': 'U_LAT_2D', 'depth': 'BOTTOM_GRIDCELL','time': 'time'},
+                    'W': {'lon': 'U_LON_2D', 'lat': 'U_LAT_2D', 'depth': 'BOTTOM_GRIDCELL','time': 'time'},
                     'T': {'lon': 'U_LON_2D', 'lat': 'U_LAT_2D', 'time':'time'},
                     'S': {'lon': 'U_LON_2D', 'lat': 'U_LAT_2D', 'time':'time'},
                     'B': {'lon': 'U_LON_2D', 'lat': 'U_LAT_2D'} }
@@ -120,38 +122,12 @@ def set_fieldset(files_highres, hormesh, sfile):
         elif(minla<maxlat+latrange):
             maxlaidx = i_i
     latind = range(minlaidx, maxlaidx)
-    print 'minlat, maxlat:', minlat,maxlat
-    print 'latind: ', latind[0], np.array(latind)[-1]
+    print('minlat, maxlat:', minlat,maxlat)
+    print('latind: ', latind[0], np.array(latind)[-1])
     indices = {'lat': latind}
     gf.close()
 
-#old:
-#    latrange = 15
-#
-#    for i_i in range(2400):
-#        minla = min(gf['U_LAT_2D'][i_i])
-#        maxla = max(gf['U_LAT_2D'][i_i])
-#        if(maxla<minlat-latrange):
-#            minlaidx = i_i
-#        elif(minlat-latrange<-78.45172):
-#            minlaidx = 0
-#        if(posidx>=13):
-#            maxlaidx = 2400
-#        elif(minla<maxlat+latrange):
-#            maxlaidx = i_i
-#    latind = range(minlaidx, maxlaidx)
-#    print 'latind: ', latind[0], np.array(latind)[-1]
-#    indices = {'lat': latind}
-#    gf.close()
-
-
     fieldset = FieldSet.from_pop(filenames, variables, dimensions, indices=indices, allow_time_extrapolation=False)
-    
-    print 'latitude and longitude ranges from the indices:' 
-    print 'longitude: ',fieldset.U.lon[0], fieldset.U.lon[-1]
-    print 'latitude: ',np.max(fieldset.U.lat[0]), np.min(fieldset.U.lat[-1])
-#    print lonsz[0],latsz[0]
-#    print 'depth at bottom: ', fieldset.B[0,lonsz[0], latsz[0],0]
 
     fieldset.U.vmax = 10    # set max of flow to 10 m/s
     fieldset.V.vmax = 10
@@ -224,7 +200,7 @@ def run_corefootprintparticles(dirwrite,outfile,lonss,latss,dep):
         output_file=pfile, verbose_progress=False, 
         recovery={ErrorCode.ErrorOutOfBounds: DeleteParticle})
 
-    print 'Execution finished'
+    print('Execution finished')
 
 outfile = "grid"+'_id'+str(posidx)+'_dd'+str(int(dd)) +'_sp'+str(int(sp)) +'_tempresmonmean'
 run_corefootprintparticles(dirwrite,outfile,lons,lats,dep)

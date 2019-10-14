@@ -2,16 +2,16 @@
 """
 Created on Thu Aug  2 15:30:32 2018
 
+This file concatenates all the model output with different 'posidx' together.
+
 @author: nooteboom
 """
 
 from __future__ import division
 import numpy as np
 from netCDF4 import Dataset
-from numba import jit
 
 #%% Some functions
-from datetime import date, datetime, timedelta
 
 Y = 2000 # dummy leap year to allow input X-02-29 (leap day)
 seasons = [('winter', (date(Y,  1,  1),  date(Y,  3, 20))),
@@ -103,7 +103,6 @@ for posidx in range(1,19):
             lons0 = np.append(lons0,nc['lon0'][:,0]+360)   
         else:
             lons0 = np.append(lons0,nc['lon0'][:,0])         
-#        lons0 = np.concatenate((lons0,nc['lon0'][:,0]),axis=0)
         lats0 = np.concatenate((lats0,nc['lat0'][:,0]), axis=0)
         lons = np.concatenate((lons,nc['lon'][:,0]),axis=0)
         lats = np.concatenate((lats,nc['lat'][:,0]), axis=0) 
@@ -137,8 +136,6 @@ if(nadv):
 #First the advected nc file
 if(adv):
     dirWrite = '/projects/0/palaeo-parcels/POP/POPres/particlefiles/sp%d_dd%d/'%(int(sp),int(dd))
-    
-    #np.savez(dirWrite + 'concatenated_sp%d_dd%d_res%d.npy'%(int(sp),int(dd),res), lats0=lats0, lons0=lons0, lons=lons, lats=lats, temp = temp, salin = salin, time = time, fixlon = fixlon, fixlat = fixlat, fixtemp = fixtemp, fixsalin = fixsalin, fixtime = fixtime)   
     
     dataset = Dataset(dirWrite + 'concatenated_smagorinski_Cs%.1f_sp%d_dd%d_res%d.nc'%(Cs,int(sp),int(dd),res),'w',format='NETCDF4_CLASSIC')
     

@@ -111,7 +111,7 @@ for i in range(len(times)):
     lats = np.append(lats, latsz)
     time = np.append(time, np.full(len(lonsz),times[i])) 
 #%%
-def set_fieldset(ufiles, wfiles, bfile):#dirread_top+'domain/coordinates.nc'):#
+def set_fieldset(ufiles, wfiles, bfile):
     filenames = { 'U': {'lon': [ufiles[0]],
                         'lat': [ufiles[0]],
                         'depth': [ufiles[0]],

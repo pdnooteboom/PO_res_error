@@ -11,7 +11,7 @@ from netCDF4 import Dataset
 from numba import jit
 
 #%% Some functions
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 Y = 2000 # dummy leap year to allow input X-02-29 (leap day)
 seasons = [('winter', (date(Y,  1,  1),  date(Y,  3, 20))),
@@ -53,7 +53,6 @@ sp = 6.
 dd = 10. 
 tempres = 'monmean'#5
 
-
 ddeg = 2
 
 dirRead = '/projects/0/palaeo-parcels/POP/POPres/0.1degree/particlefiles/'
@@ -85,7 +84,7 @@ if(adv):
     age = np.array([])
     zs = np.array([])
 
-#ncn = Dataset(dirRead + 'surface/surfacegrid' +'_id'+'_dd'+str(int(dd))+"_res"+str(res) + '.nc')
+ncn = Dataset(dirRead + 'surface/surfacegrid' +'_id'+'_dd'+str(int(dd))+"_res"+str(res) + '.nc')
 #Arrays for fixed surface locations
 if(nadv):
     fixlon = np.empty([0,ncn['lon'][:].shape[1]])
@@ -103,8 +102,7 @@ for posidx in range(18):
         if(nc['lon0'][0,0]<0):
             lons0 = np.append(lons0,nc['lon0'][:,0]+360)   
         else:
-            lons0 = np.append(lons0,nc['lon0'][:,0])         
-#        lons0 = np.concatenate((lons0,nc['lon0'][:,0]),axis=0)
+            lons0 = np.append(lons0,nc['lon0'][:,0])
         lats0 = np.concatenate((lats0,nc['lat0'][:,0]), axis=0)
         lons = np.concatenate((lons,nc['lon'][:,0]),axis=0)
         lats = np.concatenate((lats,nc['lat'][:,0]), axis=0) 
@@ -139,7 +137,6 @@ if(nadv):
 if(adv):
     dirWrite = '/projects/0/palaeo-parcels/POP/POPres/0.1degree/particlefiles/sp%d_dd%d/'%(int(sp),int(dd))
     
-    #np.savez(dirWrite + 'concatenated_sp%d_dd%d_res%d.npy'%(int(sp),int(dd),res), lats0=lats0, lons0=lons0, lons=lons, lats=lats, temp = temp, salin = salin, time = time, fixlon = fixlon, fixlat = fixlat, fixtemp = fixtemp, fixsalin = fixsalin, fixtime = fixtime)   
     if(not isinstance(tempres, str)):
         dataset = Dataset(dirWrite + 'concatenated_sp%d_dd%d_res%d_tempres%d.nc'%(int(sp),int(dd),res,tempres),'w',format='NETCDF4_CLASSIC')
     else:    
