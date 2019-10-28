@@ -35,7 +35,7 @@ ddeg = 1
 cmap2 = 'coolwarm' # For the surface area
 cmap3 = 'hot'# For the average travel distance
 vsdist = [0,3]
-vssurf = [0,1.5]
+vssurf = [0,1.8]
 #%%
 @jit(nopython=True)
 def find_nearest_index(array,value):
