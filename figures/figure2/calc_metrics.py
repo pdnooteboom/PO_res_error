@@ -3,9 +3,6 @@
 """
 Created on Thu Aug  1 10:14:27 2019
 
-This file contains all the functions which calculate the measures of fit between 
-particle clouds
-
 @author: nooteboom
 """
 
@@ -21,6 +18,7 @@ import math
 def find_nearest_index(array,value):
     idx = (np.abs(array-value)).argmin()
     return array[idx]
+
 
 @jit(nopython=True)
 def distance(origin, destination):
@@ -40,18 +38,19 @@ def distance(origin, destination):
 @jit(nopython=True)
 def uniqueloc(lats, lons, la, lo):
     bo = True
-    for i in range(len(lons)):
-        if(lons[i]==lo):
-            if(lats[i]==la):
-                bo = False
+    if(len(lons)>0):
+        for i in range(len(lons)):
+            if(lons[i]==lo):
+                if(lats[i]==la):
+                    bo = False
     return bo
 #%% calculate average lateral distance
 @jit(nopython=True)
-def avgdistf(lat, lon, avgdist, tsl, vLons, vLats):
+def avgdistf(lat, lon, avgdist, tsl, vLons, vLats,ml):
     for i in range(len(vLons)):
         dist = 0.
         n = 0.
-        for j in range(tsl):
+        for j in range(ml):
            if(lat[i,j]<1000):
                n += 1.
                dist += distance([vLats[i], vLons[i]], [lat[i,j], lon[i,j]])
@@ -70,28 +69,19 @@ def surfacef(lat, lon, surface, tsl, vLons, vLats, Lons, Lats, ml):
         surf = 0.
         lons = []
         lats = []
-        if(len(ml)>1):
-            for j in range(ml[i]):
-                if(lat[i,j]<1000):
-                    lo = find_nearest_index(Lons, lon[i,j])
-                    la = find_nearest_index(Lats, lat[i,j])
-                    if(uniqueloc(lats, lons, la, lo)):
-                        lats.append(la)
-                        lons.append(lo)
-        else:
-            for j in range(tsl):
-                if(lat[i,j]<1000):
-                    lo = find_nearest_index(Lons, lon[i,j])
-                    la = find_nearest_index(Lats, lat[i,j])
-                    if(uniqueloc(lats, lons, la, lo)):
-                        lats.append(la)
-                        lons.append(lo)
+        for j in range(ml):
+            if(lat[i,j]<1000):
+                lo = find_nearest_index(Lons, lon[i,j])
+                la = find_nearest_index(Lats, lat[i,j])
+                if(uniqueloc(lats, lons, la, lo)):
+                    lats.append(la)
+                    lons.append(lo)
         for j in range(len(lons)):
             surf += distance([lats[j]-res/2.,lons[j]-res/2.],[lats[j]-res/2.,lons[j]+res/2.]) * distance([lats[j]+res/2.,lons[j]-res/2.],[lats[j]-res/2.,lons[j]-res/2.])        
         surface[i] = surf
     return surface
 
-def calc_fields(name = '', ml=np.array([-1])):
+def calc_fields(Lats, Lons, vLats, vLons, name = '', ml=140 ):
     ncf = Dataset(name)
     Lons = ncf['Lons'][:]
     Lats = ncf['Lats'][:]
@@ -104,11 +94,13 @@ def calc_fields(name = '', ml=np.array([-1])):
 
     avgdist = np.zeros(len(vLons))
     surface = np.zeros(len(vLons))
-    avgdist = avgdistf(lat, lon, avgdist, tsl, vLons, vLats)
-    surface = surfacef(lat, lon, surface, tsl, vLons, vLats, Lons, Lats, list(ml))
+    avgdist = avgdistf(lat, lon, avgdist, tsl, vLons, vLats, ml)
+    surface = surfacef(lat, lon, surface, tsl, vLons, vLats, Lons, Lats, ml)
     avgdist, surface = avgdist.reshape(len(Lats), len(Lons)), surface.reshape(len(Lats), len(Lons))
     
-    return avgdist,surface, Lons, Lats
+    print(avgdist.shape)
+    
+    return avgdist,surface
 
 #%%
 
@@ -152,13 +144,13 @@ def test_transform_latlon_to_km_frame():
 #test_transform_latlon_to_km_frame()
 
 def Wdist(t, s):
-    # calculate the Wasserstein distance
+#    
     M = ot.dist(s, t)
     Wd = ot.emd2([], [], M)
+
     return Wd
     
 def test_Wdist():
-    # test the wasserstein distance function
     t = np.random.rand(2,2)
     s = np.random.rand(2,2)*2 + 1
     wd = Wdist(t, s)

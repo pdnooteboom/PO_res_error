@@ -17,6 +17,7 @@ import matplotlib.colors as colors
 import cartopy.mpl.ticker as cticker
 from matplotlib.lines import Line2D
 
+
 #Some parameters for the figure
 projection = ccrs.PlateCarree(180)
 exte = [1, 360, -75, 81]
@@ -26,9 +27,9 @@ cmap = 'viridis'
   
 sns.set_style("dark")
 sns.set_context("paper")
-fs = 14
+fs = 14 # fontsize
 si = 140
-lw = 2
+lw = 2 # linewidth
 
 sp1 = 6
 sp2 = 25
@@ -37,12 +38,12 @@ color1 = 'k'
 color2 = 'red'
 color3 = 'dodgerblue'
 #%% Load the data
-CS =  np.array([0.0,0.5, 1.1 ,  3.0,   6.0,  10.0,  15.0])
-CS50 = np.array([2.0, 3.0, 6.0])
+CS =  np.array([0.0,0.5, 1.1, 2.0 ,  3.0,   6.0, 15.0])
+CS50 = np.array([0.0, 1.5, 3.0, 4.5])
 cs = 3.0
 
 highres_avgd = 5535.848817 / 1000.
-highres_surf =  44644.217597 / 10.**5
+highres_surf =  5.550313492752732        
 
 dirRead = '/Volumes/HardDisk/POP/output/OT/' 
 lsq = np.zeros(len(CS))
@@ -59,7 +60,9 @@ for j in range(len(CS)):
     
     lsq[j] = np.nanmean(ncf['Wasserstein distance'][:])
     avd[j] = np.nanmean(ncf['Average horizontal travel distance'][:])  /100.
-    sur[j] = np.nanmean(ncf['Surface area'][:]) / 10**5
+    surf = ncf['Surface area'][:]
+    sur[sur==0] = np.nan
+    sur[j] = np.nanmean(surf) / 10**4
     ncf.close()
 
 for j in range(len(CS50)):
@@ -92,9 +95,7 @@ g.xlabel_style = {'fontsize': fs}
 g.ylabel_style = {'fontsize': fs}
 ax0.set_extent(exte, ccrs.PlateCarree())
 
-distance_cs0 = np.concatenate((distance_cs0[:,180:-2], distance_cs0[:,:180]),axis=1);
-
-im = plt.imshow(distance_cs0, extent = exte2, #,vmin=0, vmax=5*10**6
+im = plt.imshow(distance_cs0, extent = exte2,
                 transform=ccrs.PlateCarree(), cmap=cmap, zorder = 0,
                 norm=colors.LogNorm(vmin=10000, vmax=5*10**6))
 land = np.full(distance_cs0.shape, np.nan); land[np.isnan(distance_cs0)] = 1;
@@ -116,7 +117,8 @@ mean_distance_mm = np.nanmean(distance_mm)
 
 ax0 = plt.subplot(2,2,1, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
-                tick.label.set_fontsize(fs)
+                tick.label.set_fontsize(fs) 
+
 plt.title('(a) 0.1$^{\circ}$, monthly, cs=0', fontsize=fs)
 ax0.add_feature(cartopy.feature.LAND, color='gray')
 g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
@@ -135,7 +137,7 @@ ax0.set_extent(extemm, ccrs.PlateCarree())
 
 distance_mm = np.concatenate((distance_mm[:,180:-2], distance_mm[:,:180]),axis=1);
 
-im = plt.imshow(distance_mm, extent = extemm, #,vmin=0, vmax=5*10**6
+im = plt.imshow(distance_mm, extent = extemm,
                 transform=ccrs.PlateCarree(), cmap=cmap, zorder = 0,
                 norm=colors.LogNorm(vmin=10000, vmax=5*10**6))
 land = np.full(distance_mm.shape, np.nan); land[np.isnan(distance_mm)] = 1;
@@ -161,7 +163,12 @@ def make_patch_spines_invisible(ax):
 
 
 fig.subplots_adjust(right=0.85)
-ax = plt.subplot(2,2,4)
+
+dsWD = [4,7,4,7] # the line dash of the first configuration
+
+ax3 = plt.subplot(2,2,4)
+ax2 = ax3.twinx()
+ax = ax3.twinx()
 plt.title('(d)', fontsize=fs)
 for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs) 
@@ -172,67 +179,85 @@ plt.xlabel('$c_s$', fontsize=fs)
 plt.ylabel('Mean $W_d$ (10$^{5}$ km)', fontsize=fs, color=color1)
 ax.set_yticks([0,1.,2.,3.,4,5,6])
 
-ax2 = ax.twinx()
- 
+
+# the travel distance axis
 ax2.spines["right"].set_position(("axes", 1.1))
 a0 = sns.lineplot(x=CS/3., y=np.full(len(CS),highres_avgd), linewidth=lw,
-                  ax=ax2, color=color2)
-a0.lines[0].set_linestyle("--")
+                  ax=ax2, color=color2, zorder=1)
+a0.lines[0].set_dashes(dsWD)
 
 a0 = sns.lineplot(x=CS/3., y=np.full(len(CS),np.nanmean(ncf_mm['Average horizontal travel distance'][:]/1000.)), linewidth=lw,
-                  ax=ax2, color=color2)
+                  ax=ax2, color=color2, zorder=1)
 a0.lines[1].set_linestyle(":")
-sns.lineplot(x=CS/3., y=avd, ax=ax2, color=color2, linewidth=lw)
-sns.scatterplot(x=CS/3., y=avd, ax=ax2, color=color2, s=si)
+
+
+sns.lineplot(x=CS/3., y=avd, ax=ax2, color=color2, linewidth=lw, zorder=10)
+sns.scatterplot(x=CS/3., y=avd, ax=ax2, color=color2, s=si, zorder=11)
 make_patch_spines_invisible(ax2)
 ax2.spines["right"].set_visible(True)
 ax2.set_ylabel('average travel distance (10$^2$ km)', fontsize=fs, color = color2)
 for tick in ax2.yaxis.get_major_ticks():
                 tick.label.set_fontsize(fs)
-ax2.set_yticklabels([4,4.5,5,5.5,6], fontsize=fs)
+ax2.set_yticklabels([4,4.5,5,5.5,6], fontsize=fs, color=color2)
 ax2.set_ylim(4.,6.4)
 
 
+print('average distances:  ', highres_avgd,'   ', np.nanmean(ncf_mm['Average horizontal travel distance'][:]/1000.), '   ', avd)
 
-ax3 = ax.twinx()
+
+
+# the surface area axis
+ax3.set_ylabel('surface area (10$^5$ km$^2$)', fontsize=fs, color = color3)
+ax3.set_yticklabels(labels=[1,2,3,4,5,6],fontsize=fs, color=color3)#
+
 a0 = sns.lineplot(x=CS/3., y=np.full(len(CS),highres_surf), linewidth=lw, ax=ax3, 
-                  color=color3, label='1', legend=False, linestyle='--')
-a0.lines[0].set_linestyle("--")
-a0 = sns.lineplot(x=CS/3., y=np.full(len(CS),np.nanmean(ncf_mm['Surface area'][:]/100000.)), linewidth=lw,
-                  ax=ax3, color=color3, label='2', 
-                  legend=False, linestyle=':')
+                  color=color3, label='1', legend=False, zorder=10)
+a0.lines[0].set_dashes(dsWD)
+a0 = sns.lineplot(x=CS/3., y=np.full(len(CS),4.845305778217904), ax=ax3, linewidth=lw,
+                  color=color3, label='2', 
+                  legend=False, zorder=5)
 a0.lines[1].set_linestyle(":")
-sns.scatterplot(x=CS/3., y=sur, ax=ax3, color=color3, s=si)
-sns.lineplot(x=CS/3., y=sur, ax=ax3, color=color3, linewidth=lw, markers = True, label='3/4')#label='surface area (m)'
-ax3.set_ylabel('surface area (10$^5$ km)', fontsize=fs, color = color3)
-ax3.set_yticklabels([1,2,3,4,5, 6], fontsize=fs)
+
+
+sns.scatterplot(x=CS/3., y=sur, ax=ax3, color=color3, s=si, zorder=11)
+sns.lineplot(x=CS/3., y=sur, ax=ax3, color=color3, linewidth=lw, markers = True,
+             label='3/4', zorder=10)
+
+print('surface areas:  ', highres_surf,'   ', np.nanmean(ncf_mm['Surface area'][:]/10**5), '   ', sur)
+
 lw = 2
 colo = 'k'
-legend_el = [Line2D([0], [0], linestyle='--', color=colo, lw=lw, label='1'), 
+legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='1'), 
              Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='2'), 
              Line2D([0], [0], color=colo, lw=lw, label='3/4')]
-a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs)
+a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .1, 1., .102))
 
-sns.lineplot(x=CS/3.,y=lsq/100000., linewidth = lw, ax=ax, color=color1, 
-             zorder=10)#label='W$_d$',
 
-a0 = sns.lineplot(x=CS/3.,y=np.full(len(lsq), mean_distance_mm/100000.), 
+
+# the wasserstein axis
+ax.set_yticklabels(labels=[0,1,2,3,4,5],fontsize=fs, color='k')
+
+sns.lineplot(x=CS/3.,y=lsq/10**5, linewidth = lw, ax=ax, color=color1, 
+             zorder=10)
+
+a0 = sns.lineplot(x=CS/3.,y=np.full(len(lsq), mean_distance_mm/10**5), 
                   linewidth = lw, ax=ax, color=color1, zorder=10)
 a0.lines[1].set_linestyle(":")
-sns.lineplot(x=CS/3.,y=lsqnull/100000., linewidth = lw, ax=ax, color=color1, 
+sns.lineplot(x=CS/3.,y=lsqnull/10**5, linewidth = lw, ax=ax, color=color1, 
              zorder=10)
-a0.lines[2].set_linestyle("--")
-sns.scatterplot(x=CS/3.,y=lsq/100000., ax=ax, color=color1, s=si, zorder=10,
+a0.lines[2].set_dashes(dsWD)
+sns.scatterplot(x=CS/3.,y=lsq/10**5, ax=ax, color=color1, s=si, zorder=11,
                    legend=False)
-sns.lineplot(x=CS50/3.,y=lsq50/100000., linewidth = lw, ax=ax, color=color1, 
-             zorder=10)
-sns.scatterplot(x=CS50/3.,y=lsq50/100000., ax=ax, color=color1, s=si, zorder=10,
+sns.lineplot(x=CS50/3.,y=lsq50/10**5, linewidth = lw, ax=ax, color=color1, 
+             zorder=11)
+sns.scatterplot(x=CS50/3.,y=lsq50/10**5, ax=ax, color=color1, s=si, zorder=10,
                    legend=False, marker="^")
-# %%third subplot
+print('Wds: ', lsq/10**5, lsqnull/10**5, lsq50/10**5)
 
+# %%third subplot
 ax0 = plt.subplot(2,2,3, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
-                tick.label.set_fontsize(fs) 
+                tick.label.set_fontsize(fs)
 plt.title('(c) 1$^{\circ}$, monthly, $c_s$=%.1f'%(cs/3.), fontsize=fs)
 g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -247,8 +272,6 @@ g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
 g.xlabel_style = {'fontsize': fs}
 g.ylabel_style = {'fontsize': fs}
 ax0.set_extent(exte, ccrs.PlateCarree())
-
-distance = np.concatenate((distance[:,180:-2], distance[:,:180]),axis=1);
 
 im = plt.imshow(distance, extent = exte2,
                 transform=ccrs.PlateCarree(), cmap=cmap, zorder = 0,
@@ -265,7 +288,6 @@ ax0.xaxis.set_major_formatter(lon_formatter)
 ax0.yaxis.set_major_formatter(lat_formatter)
 ax0.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
-
 fig.subplots_adjust(bottom=0.17)
 cbar_ax = fig.add_axes([0.11, 0.0, 0.35, 0.07])
 cbar_ax.set_visible(False)
@@ -274,5 +296,5 @@ cbar.ax.xaxis.set_label_position('bottom')
 cbar.set_label(label='W$_d$ (km)', fontsize=fs)
 cbar.ax.tick_params(labelsize=fs)
 
-plt.savefig('CStunedplot3.pdf',bbox_inches='tight',pad_inches=0)
+plt.savefig('figure2.pdf',bbox_inches='tight',pad_inches=0)
 plt.show()
