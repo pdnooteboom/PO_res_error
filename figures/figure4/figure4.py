@@ -9,14 +9,11 @@ Created on Thu Aug  8 15:16:58 2019
 import numpy as np
 import matplotlib.pylab as plt
 from netCDF4 import Dataset
-import matplotlib
 import cartopy.crs as ccrs
 import seaborn as sns
-from numba import jit
 import cartopy
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.ticker as mticker
-import cartopy.mpl.ticker as cticker
 
 def find_nearest(array,value):
     idx = (np.abs(array-value)).argmin()
@@ -27,7 +24,7 @@ sns.set_context("paper")
 
 projection = ccrs.PlateCarree()
 size = 17
-cmap='rainbow'#'inferno'
+cmap='rainbow'
 
 lat= -47
 lon = 42
@@ -68,7 +65,7 @@ cd = 'y'
 
 opac = 0.5
 #%% First the highres
-dirReadhigh = '/Volumes/HardDisk/POP/output/highres/timeseries/' #'/projects/0/palaeo-parcels/POP/POPres/0.1degree/particlefiles/sp%d_dd%d'%(sp,dd) # 
+dirReadhigh = '/Volumes/HardDisk/POP/output/highres/timeseries/'
 nc_hr = Dataset(dirReadhigh + 'timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
 
 Lons = nc_hr['Lons'][:]
@@ -97,7 +94,7 @@ hstemp2 = nc_hr['temp'][idx2]
 
 ml2 = len(hstemp2[0])
 #%% Then the highres monthly
-dirReadlow = '/Volumes/HardDisk/POP/output/highres/timeseries/'  # '/projects/0/palaeo-parcels/POP/POPres/particlefiles/sp%d_dd%d'%(sp,dd)# 
+dirReadlow = '/Volumes/HardDisk/POP/output/highres/timeseries/'
 nc_lr = Dataset(dirReadlow + 'timeseries_per_location_ddeg1_sp6_dd10_tempresmonmean.nc')
 
 Lons = nc_lr['Lons'][:]
@@ -131,7 +128,6 @@ g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_left = False
-#g.xlabels_bottom = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlabel_style = {'fontsize': fs-2}
@@ -142,10 +138,8 @@ ax0.set_extent(exte, ccrs.PlateCarree())
 
 plt.scatter(hxs, hys, c=ch, s=size, label='1', alpha=opac)
 plt.scatter(lxs, lys, c=cl, s=size, label='2', alpha=opac)
-plt.scatter(llo+0.5, lla+0.5 ,c='k', marker='P', s=150)#'+'
+plt.scatter(llo+0.5, lla+0.5 ,c='k', marker='P', s=150)
 plt.legend(loc=4, fontsize=fs-4, title='configuration')
-
-#plt.legend(loc=2, prop={'size': 15})
 
 ax0 = plt.subplot(1,2,1, projection=projection)
 plt.title('(a)', fontsize=fs)
@@ -168,7 +162,6 @@ plt.scatter(hxs2, hys2, c=ch, s=size, label='0.1', alpha=opac)
 plt.scatter(llo2+0.5, lla2+0.5 ,c='k', marker='P', s=150)#'+'
 
 #%%
-
 plt.savefig('figure4.pdf',bbox_inches='tight',pad_inches=0)
 
 plt.show()

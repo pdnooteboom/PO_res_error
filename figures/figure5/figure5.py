@@ -9,14 +9,11 @@ Created on Thu Aug  8 15:16:58 2019
 import numpy as np
 import matplotlib.pylab as plt
 from netCDF4 import Dataset
-import matplotlib
 import cartopy.crs as ccrs
 import seaborn as sns
-from numba import jit
 import cartopy
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.ticker as mticker
-import cartopy.mpl.ticker as cticker
 
 def find_nearest(array,value):
     idx = (np.abs(array-value)).argmin()
@@ -27,7 +24,7 @@ sns.set_context("paper")
 
 projection = ccrs.PlateCarree()
 size = 11
-cmap='rainbow'#'inferno'
+cmap='rainbow'
 
 lat= -50
 lon = 240
@@ -43,8 +40,6 @@ width = 50
 hei = 15
 width2 = 8
 hei2 = 6
-#exte = [-360+(lon-width), -360+lon+width, lat-hei, lat+hei]
-#exte2 = [-360+(lon2-width2), -360+lon2+width2, lat2-hei2, lat2+hei2]
 exte = [-360+(lon-42), -360+lon+6, lat-hei, lat+hei]
 exte2 = [-360+(lon2-width2), -360+lon2+10, lat2-4, lat2+hei2]
 exte3 = [(lon3-26), lon3+38, lat3-hei, lat3+25]
@@ -90,7 +85,7 @@ opac = 0.5
 xloc = np.arange(-180, 180, 20)
 yloc = np.arange(-90,90,20)
 #%% First the highres
-dirReadhigh = '/Volumes/HardDisk/POP/output/highres/timeseries/' #'/projects/0/palaeo-parcels/POP/POPres/0.1degree/particlefiles/sp%d_dd%d'%(sp,dd) # 
+dirReadhigh = '/Volumes/HardDisk/POP/output/highres/timeseries/'
 nc_hr = Dataset(dirReadhigh + 'timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
 
 
@@ -131,7 +126,7 @@ hys4 = nc_hr['lat'][idx4]
 hstemp4 = nc_hr['temp'][idx4]
 #%% Then the lowres with cs
 
-dirReadlow = '/Volumes/HardDisk/POP/output/lowres/timeseries/'  # '/projects/0/palaeo-parcels/POP/POPres/particlefiles/sp%d_dd%d'%(sp,dd)# 
+dirReadlow = '/Volumes/HardDisk/POP/output/lowres/timeseries/'
 nc_lr = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
 
 Lons = nc_lr['Lons'][:]
@@ -167,7 +162,7 @@ lys4 = nc_lr['lat'][idx4]
 lstemp4 = nc_lr['temp'][idx4]
 #%% Then the lowres with cs==0
 cs = 0.0
-dirReadlow = '/Volumes/HardDisk/POP/output/lowres/timeseries/'  # '/projects/0/palaeo-parcels/POP/POPres/particlefiles/sp%d_dd%d'%(sp,dd)# 
+dirReadlow = '/Volumes/HardDisk/POP/output/lowres/timeseries/'
 nc_lr = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
 
 Lons = nc_lr['Lons'][:]
@@ -213,7 +208,6 @@ g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_left = False
-#g.xlabels_bottom = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlabel_style = {'fontsize': fs-3}
@@ -225,9 +219,7 @@ ax0.set_extent(exte, ccrs.PlateCarree())
 plt.scatter(hxs, hys, c=ch, s=size, label='0.1', alpha=opac)
 plt.scatter(lxs, lys, c=cl, s=size, label='1', alpha=opac)
 plt.scatter(lxs0, lys0, c=cd, s=size, label='1, cs=0', alpha=opac)
-plt.scatter(llo+0.5, lla +0.5,c='k', marker='P', s=150)#'+'
-
-#plt.legend(loc=2, prop={'size': 15})
+plt.scatter(llo+0.5, lla +0.5,c='k', marker='P', s=150)
 
 ax0 = plt.subplot(2,2,1, projection=projection)
 plt.title('(a)', fontsize=fs)
@@ -237,7 +229,6 @@ g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_right = False
-#g.xlabels_bottom = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlocator = mticker.FixedLocator(xloc)
@@ -261,7 +252,6 @@ g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_right = False
-#g.xlabels_bottom = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlabel_style = {'fontsize': fs-3}
@@ -285,7 +275,6 @@ g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_left = False
-#g.xlabels_bottom = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlocator = mticker.FixedLocator(np.arange(exte4[0], exte4[1]+20, 20))
