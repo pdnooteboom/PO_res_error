@@ -38,7 +38,7 @@ color1 = 'k'
 color2 = 'red'
 color3 = 'dodgerblue'
 #%% Load the data
-CS =  np.array([0.0,0.5, 1.1, 2.0 ,  3.0,   6.0, 15.0])
+CS =  np.array([0.0,0.5, 2.0 ,  3.0,   6.0, 15.0])
 CS50 = np.array([0.0, 1.5, 3.0, 4.5])
 cs = 3.0
 
