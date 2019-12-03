@@ -17,7 +17,7 @@ CS = [0.0, 3.0, 4.5] # cs values where we calculate all measures from
 
 minmaxlat = 100000.
 maxminlat = -100000
-allresults = ['2.0','3.0', '6.0'] # 
+allresults = ['monmean', 'null', '0.0','0.25', '0.5', '1.0', '1.5', '2.0', '5.0']
 
 dirWrite = '/Volumes/HardDisk/POP/output/OT/'  #'/projects/0/palaeo-parcels/POP/OT/'
 dirReadhigh = '/Volumes/HardDisk/POP/output/highres/timeseries/'   
@@ -34,7 +34,7 @@ tslen = nc['tslens'][:]
 print('minlat, maxlat  '+str(np.min(nc['Lats'][:])) + '   ' + str(np.max(nc['Lats'][:])))
 print(np.sum(tslen>hid)/np.float(len(tslen[tslen>0])))
 tslenmin = min(tslenmin, np.min(tslen[tslen>hid]))
-for i in ['monmean', 'null','0.0','0.1','0.3', '0.5', '0.7', '1.1', '2.0', '3.0', '6.0', '10.0', '15.0']:
+for i in allresults:
     print(i)  # Check if all particle clouds are of the 'maximum particle cloud size'
     if('monmean'==i):
         nc = Dataset(dirReadhigh + 'timeseries_per_location_ddeg1_sp6_dd10_tempresmonmean.nc')
@@ -51,7 +51,11 @@ for i in ['monmean', 'null','0.0','0.1','0.3', '0.5', '0.7', '1.1', '2.0', '3.0'
         print(np.sum(tslen>hid)/np.float(len(tslen[tslen>0])))
         tslenmin = min(tslenmin, np.min(tslen[tslen>hid]))
     else:
-        nc = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%s_ddeg%d_sp%d_dd%d.nc'%(i,ddeg,sp,dd))
+        if(i=='0.0'):
+            nc = nc_target = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%s_ddeg%d_sp%d_dd%d.nc'%(i,ddeg,sp,dd))
+        else:
+            nc = nc_target = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_wn_Cs%s_ddeg%d_sp%d_dd%d.nc'%(i,ddeg,sp,dd))
+ #       nc = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%s_ddeg%d_sp%d_dd%d.nc'%(i,ddeg,sp,dd))
         minmaxlat = min(minmaxlat,np.max(nc['Lats'][:]))
         maxminlat = max(maxminlat, np.min(nc['Lats'][:]))
         vLons = nc['vLons'][:]
@@ -194,7 +198,13 @@ for i in allresults:
         SURF = ds.createVariable('Surface area', np.float32, ('lat','lon',))
         
         cs = np.float(i)
-        nc_source = nc_target = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%s_ddeg%d_sp%d_dd%d.nc'%(i,ddeg,sp,dd))
+        if(cs==0.):
+            nc_source = nc_target = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
+        elif(cs!=0.25):
+            nc_source = nc_target = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
+        else:
+            nc_source = nc_target = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_wn_Cs%.2f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
+#        nc_source = nc_target = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%s_ddeg%d_sp%d_dd%d.nc'%(i,ddeg,sp,dd))
         lat_s = nc_source['lat'][:]
         lon_s = nc_source['lon'][:]
         vLats_s = nc_source['vLats'][:]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug  8 15:16:58 2019
+Created on Tue Jul 16 15:41:33 2019
 
 @author: nooteboom
 """
@@ -9,159 +9,331 @@ Created on Thu Aug  8 15:16:58 2019
 import numpy as np
 import matplotlib.pylab as plt
 from netCDF4 import Dataset
+import matplotlib
 import cartopy.crs as ccrs
 import seaborn as sns
-import cartopy
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.ticker as mticker
+import math
+from numba import jit
+import cartopy.mpl.ticker as cticker
+from matplotlib.lines import Line2D
 
-def find_nearest(array,value):
+sns.set_style("whitegrid")
+sns.set_context("paper")
+fs = 14
+font = {'size'   : fs}
+matplotlib.rc('font', **font)
+
+#variables
+sp = 6
+dd = 10
+projection = ccrs.PlateCarree(180)
+exte = [1, 360, -74, 81]
+exte2 = [-179, 181, -74, 81]
+Cs = 3.0
+ddeg = 1
+cmap2 = 'coolwarm' # For the surface area
+cmap3 = 'hot'# For the average travel distance
+vsdist = [0,3]
+vssurf = [0,1.8]
+#%%
+@jit(nopython=True)
+def find_nearest_index(array,value):
     idx = (np.abs(array-value)).argmin()
     return array[idx]
 
-sns.set_style("darkgrid")
-sns.set_context("paper")
+@jit(nopython=True)
+def distance(origin, destination):
+    lat1, lon1 = origin
+    lat2, lon2 = destination
+    radius = 6371.1 # km
 
-projection = ccrs.PlateCarree()
-size = 17
-cmap='rainbow'
+    dlat = math.radians(lat2-lat1)
+    dlon = math.radians(lon2-lon1)
+    a = math.sin(dlat/2) * math.sin(dlat/2) + math.cos(math.radians(lat1)) \
+        * math.cos(math.radians(lat2)) * math.sin(dlon/2) * math.sin(dlon/2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    d = radius * c
 
-lat= -47
-lon = 42
+    return d
 
-lat2= -46
-lon2 = 39
+@jit(nopython=True)
+def avgdistf(lat, lon, avgdist, tsl, vLons, vLats, ml):
+    for i in range(len(vLons)):
+        dist = 0.
+        n = 0.
+        for j in range(ml):
+           if(lat[i,j]<1000):
+               n += 1.
+               dist += distance([vLats[i], vLons[i]], [lat[i,j], lon[i,j]])
+        if(n>0):
+            avgdist[i] = dist / n
+        else:
+            avgdist[i] = np.nan
+    return avgdist
 
+@jit(nopython=True)
+def uniqueloc(lats, lons, la, lo):
+    bo = True
+    if(len(lons)>0):
+        for i in range(len(lons)):
+            if(lons[i]==lo):
+                if(lats[i]==la):
+                    bo = False
+    return bo
 
-width = 55
-height = 30
-width2 = width 
-height2 = height 
+@jit(nopython=True)
+def surfacef(lat, lon, surface, tsl, vLons, vLats, Lons, Lats, ml):
+    res = 1. # resolution of the binning
+    for i in range(len(vLons)):
+        surf = 0.
+        lons = []
+        lats = []
+        for j in range(ml):
+            if(lat[i,j]<1000):
+                lo = find_nearest_index(Lons, lon[i,j])
+                la = find_nearest_index(Lats, lat[i,j])
+                if(uniqueloc(lats, lons, la, lo)):
+                    lats.append(la)
+                    lons.append(lo)
+        for j in range(len(lons)):
+            surf += distance([lats[j]-res/2.,lons[j]-res/2.],[lats[j]-res/2.,lons[j]+res/2.]) * distance([lats[j]+res/2.,lons[j]-res/2.],[lats[j]-res/2.,lons[j]-res/2.])        
+        surface[i] = surf         
+    return surface
 
-# Manage the location on the earth and extents of the subfigures
-r1 = -19
-u1 = 0
-exte = [-360+lon-width/2.+r1, -360+lon+width/2.+r1, lat-height/2.+u1, lat+height/2.+u1]
-r2 = -13
-u2 = 2
-exte2 = np.array([-360+lon2-width2/2.+r2, -360+lon2+width2/2.+r2, lat2-height2/2.+u2, lat2+height2/2.+u2])
+def calc_fields(name = '', ml=111):
+    ncf = Dataset(name)
+    Lons = ncf['Lons'][:]
+    Lats = ncf['Lats'][:]
+    vLons = ncf['vLons'][:]
+    vLats = ncf['vLats'][:]
+    assert len(Lons)*len(Lats)==len(vLons)    
+    lat = ncf['lat'][:]
+    lon = ncf['lon'][:]
+    tsl = ncf['temp'][:].shape[1]
 
-xloc = np.arange(-180, 180, 20)
-yloc = np.arange(-90,90,15)
+    avgdist = np.zeros(len(vLons))
+    surface = np.zeros(len(vLons))
+    avgdist = avgdistf(lat, lon, avgdist, tsl, vLons, vLats, ml)
+    surface = surfacef(lat, lon, surface, tsl, vLons, vLats, Lons, Lats, ml)
+    avgdist, surface = avgdist.reshape(len(Lats), len(Lons)), surface.reshape(len(Lats), len(Lons))
+    avgdist = np.concatenate((avgdist[:,180:-2], avgdist[:,:180]),axis=1);
+    surface = np.concatenate((surface[:,180:-2],surface[:,:180]),axis=1);
+    Lons = np.append(Lons[180:-2]-360,Lons[:180])
+    
+    return avgdist,surface, Lons, Lats
+#%% start figure
+fig = plt.figure(figsize=(18,9))
+#%%
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
+avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+#%% Define the length of the time series at every releaselocation
+nchr = Dataset('/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
+ml = np.full(len(nchr['vLons'][:]), -1)
+for locs in range(len(nchr['vLons'][:])):
+    ml[locs] = nchr['tslens'][locs]
 
-ddeg = 1
-sp = 6
-dd = 10
-cs = 3.0
-
-fs = 18
-
-csea = 'whitesmoke'
-cland = 'k'
-
-ch = 'red'
-cl = 'royalblue'
-cd = 'y'
-
-opac = 0.5
-#%% First the highres
-dirReadhigh = '/Volumes/HardDisk/POP/output/highres/timeseries/'
-nc_hr = Dataset(dirReadhigh + 'timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
-
-Lons = nc_hr['Lons'][:]
-Lats = nc_hr['Lats'][:]
-vLons = nc_hr['vLons'][:]
-vLats = nc_hr['vLats'][:]
-
-hlo = find_nearest(Lons,lon)
-hla = find_nearest(Lats,lat)
-hlo2 = find_nearest(Lons,lon2)
-hla2 = find_nearest(Lats,lat2)
-
-idx = np.where(np.logical_and(vLons==hlo, vLats==hla))
-idx2 = np.where(np.logical_and(vLons==hlo2, vLats==hla2))
-assert len(idx[0]==1)
-
-hxs = nc_hr['lon'][idx]
-hys = nc_hr['lat'][idx]
-hstemp = nc_hr['temp'][idx]
-
-ml = len(hstemp[0])
-
-hxs2 = nc_hr['lon'][idx2]
-hys2 = nc_hr['lat'][idx2]
-hstemp2 = nc_hr['temp'][idx2]
-
-ml2 = len(hstemp2[0])
-#%% Then the highres monthly
-dirReadlow = '/Volumes/HardDisk/POP/output/highres/timeseries/'
-nc_lr = Dataset(dirReadlow + 'timeseries_per_location_ddeg1_sp6_dd10_tempresmonmean.nc')
-
-Lons = nc_lr['Lons'][:]
-Lats = nc_lr['Lats'][:]
-vLons = nc_lr['vLons'][:]
-vLats = nc_lr['vLats'][:]
-
-llo = find_nearest(Lons,lon)
-lla = find_nearest(Lats,lat)
-llo2 = find_nearest(Lons,lon2)
-lla2 = find_nearest(Lats,lat2)
-idx2 = np.where(np.logical_and(vLons==llo2, vLats==lla2))
-idx = np.where(np.logical_and(vLons==llo, vLats==lla))
-
-assert len(idx2[0]==1)
-lxs2 = nc_lr['lon'][idx2]
-lys2 = nc_lr['lat'][idx2]
-lstemp2 = nc_lr['temp'][idx2][:,:ml2]
-lxs = nc_lr['lon'][idx]
-lys = nc_lr['lat'][idx]
-lstemp = nc_lr['temp'][idx][:,:ml]
-
-#%% The plot
-fig = plt.figure(figsize=(15,7))
-
-ax0 = plt.subplot(1,2,2, projection=projection)
-plt.title('(b)', fontsize=fs)
-ax0.add_feature(cartopy.feature.LAND, color=cland)
-ax0.add_feature(cartopy.feature.OCEAN, color=csea, zorder=0)
-g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                  linewidth=1, color='gray', alpha=0.5, linestyle='--')
-g.xlabels_top = False
-g.ylabels_left = False
-g.xformatter = LONGITUDE_FORMATTER
-g.yformatter = LATITUDE_FORMATTER
-g.xlabel_style = {'fontsize': fs-2}
-g.ylabel_style = {'fontsize': fs-2}
-g.xlocator = mticker.FixedLocator(xloc)
-g.ylocator = mticker.FixedLocator(yloc)
-ax0.set_extent(exte, ccrs.PlateCarree())
-
-plt.scatter(hxs, hys, c=ch, s=size, label='1', alpha=opac)
-plt.scatter(lxs, lys, c=cl, s=size, label='2', alpha=opac)
-plt.scatter(llo+0.5, lla+0.5 ,c='k', marker='P', s=150)
-plt.legend(loc=4, fontsize=fs-4, title='configuration')
-
-ax0 = plt.subplot(1,2,1, projection=projection)
-plt.title('(a)', fontsize=fs)
-ax0.add_feature(cartopy.feature.LAND, color=cland)
-ax0.add_feature(cartopy.feature.OCEAN, color=csea, zorder=0)
+#%% Subplot (a) highres
+ax0 = plt.subplot(2,2,1, projection=projection)
+plt.title('(a)$R_{0.1}$', fontsize=fs)
 g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_right = False
-g.xformatter = LONGITUDE_FORMATTER
-g.yformatter = LATITUDE_FORMATTER
-g.xlocator = mticker.FixedLocator(xloc)
-g.ylocator = mticker.FixedLocator(yloc)
+g.xlabels_bottom = False
 g.xlabel_style = {'fontsize': fs}
 g.ylabel_style = {'fontsize': fs}
-ax0.set_extent(exte2, ccrs.PlateCarree())
+g.xformatter = LONGITUDE_FORMATTER
+g.yformatter = LATITUDE_FORMATTER
+g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
+g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
+ax0.set_extent(exte, ccrs.PlateCarree())
 
-plt.scatter(lxs2, lys2, c=cl, s=size, label='1', alpha=opac)
-plt.scatter(hxs2, hys2, c=ch, s=size, label='0.1', alpha=opac)
-plt.scatter(llo2+0.5, lla2+0.5 ,c='k', marker='P', s=150)#'+'
+plt.imshow(avgd/1000., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
+land = np.full(avgd.shape, np.nan); land[np.isnan(avgd)] = 1;
+plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
+
+highres_avgd = np.nanmean(avgd)
+#%% subplot (b)
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/LOWres/timeseries/timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(0.0,ddeg,sp,dd))
+avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+#%%
+ax = plt.subplot(2,2,2, projection=projection)
+plt.title('(b) $R_{1m}$', fontsize=fs)
+
+g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='--')
+g.xlabels_top = False
+g.ylabels_right = False
+g.xlabels_bottom = False
+g.xlabel_style = {'fontsize': fs}
+g.ylabel_style = {'fontsize': fs}
+g.xformatter = LONGITUDE_FORMATTER
+g.yformatter = LATITUDE_FORMATTER
+g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
+g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
+ax.set_extent(exte, ccrs.PlateCarree())
+
+ax.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
+ax.set_xticklabels([0., 90., 180., 270., 360.], fontsize=fs)
+lon_formatter = cticker.LongitudeFormatter()
+lat_formatter = cticker.LatitudeFormatter()
+ax.xaxis.set_major_formatter(lon_formatter)
+ax.yaxis.set_major_formatter(lat_formatter)
+ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
+
+plt.imshow(avgd/1000., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
+land = np.full(avgd.shape, np.nan); land[np.isnan(avgd)] = 1;
+plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
 
 #%%
-plt.savefig('figure4.pdf',bbox_inches='tight',pad_inches=0)
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(Cs,ddeg,sp,dd))
+avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+#%% subplot (c)
+ax = plt.subplot(2,2,3, projection=projection)
+plt.title('(c) $R_{1md}$, $c_s=1$', fontsize=fs)
 
+g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='--')
+g.xlabels_top = False
+g.ylabels_right = False
+g.xlabels_bottom = False
+g.xlabel_style = {'fontsize': fs}
+g.ylabel_style = {'fontsize': fs}
+g.xformatter = LONGITUDE_FORMATTER
+g.yformatter = LATITUDE_FORMATTER
+g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
+g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
+ax.set_extent(exte, ccrs.PlateCarree())
+
+ax.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
+ax.set_xticklabels([0., 90., 180., 270., 360.], fontsize=fs)
+lon_formatter = cticker.LongitudeFormatter()
+lat_formatter = cticker.LatitudeFormatter()
+ax.xaxis.set_major_formatter(lon_formatter)
+ax.yaxis.set_major_formatter(lat_formatter)
+ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
+
+im = plt.imshow(avgd/1000., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
+land = np.full(avgd.shape, np.nan); land[np.isnan(avgd)] = 1;
+plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
+
+#%%
+sns.set_style("darkgrid")
+sns.set_context("paper")
+fs = 14 # fontsize
+si = 140
+lw = 2 # linewidth
+
+sp1 = 6
+sp2 = 25
+
+color1 = 'k'
+color2 = 'red'
+color3 = 'k'
+#%% Load the data
+CS =  np.array([0., 0.25, 0.5, 1.0, 1.5, 2.0, 5.0])#np.array([0.0,0.5, 2.0 ,  3.0,   6.0, 15.0])
+CS50 = np.array([0., 0.25, 0.5, 1.0, 1.5, 2.0, 5.0])#np.array([0.0, 1.5, 3.0, 4.5])
+cs = 1.0
+
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
+avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+avgd[avgd==0] = np.nan
+highres_avgd = np.nanmean(avgd) / 100.
+
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp6_dd10_tempresmonmean.nc')
+avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+avgd[avgd==0] = np.nan
+avd_temp = np.nanmean(avgd) / 100.
+
+lsq = np.zeros(len(CS))
+lsq50 = np.zeros(len(CS50))
+avd50 = np.zeros(len(CS50))
+avd = np.zeros(len(CS))
+sur  = np.zeros(len(CS))
+
+for j in range(len(CS)):
+    if(CS[j]==0):
+        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_Cs%.1f_ddeg1_sp%d_dd10.nc'%(CS[j],sp1))
+    elif(CS[j]!=0.25):
+        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg1_sp%d_dd10.nc'%(CS[j],sp1))
+    else:
+        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.2f_ddeg1_sp%d_dd10.nc'%(CS[j],sp1))
+    avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+    avgd[avgd==0] = np.nan
+    avd[j] = np.nanmean(avgd)  / 100.
+
+for j in range(len(CS50)):
+    if(CS50[j]==0):
+        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_Cs%.1f_ddeg1_sp%d_dd10.nc'%(CS[j],sp2))
+    elif(CS50[j]!=0.25):
+        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg1_sp%d_dd10.nc'%(CS[j],sp2))
+    else:
+        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.2f_ddeg1_sp%d_dd10.nc'%(CS[j],sp2))
+
+    avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+    avgd[avgd==0] = np.nan
+    avd50[j] = np.nanmean(avgd)  / 100.
+
+avgd50, surf50, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp25_dd10_tempres5.nc')
+avgd50mean = np.nanmean(avgd50) / 100.
+
+dsWD = [4,7,4,7] # the line dash of the first configuration
+
+ax = plt.subplot(2,2,4)
+plt.title('(d)', fontsize=fs)
+
+plt.xlabel('$c_s$', fontsize=fs)
+
+a0 = sns.lineplot(x=CS, y=np.full(len(CS),highres_avgd), linewidth=lw,
+                   color=color1, zorder=1)
+a0.lines[0].set_dashes(dsWD)
+a0 = sns.lineplot(x=CS, y=np.full(len(CS),avd_temp), linewidth=lw,
+                   color=color1, zorder=1)
+a0.lines[1].set_linestyle(":")
+a0 = sns.lineplot(x=CS, y=np.full(len(CS),avgd50mean), linewidth=lw,
+                   color=color2, zorder=1)
+a0.lines[2].set_dashes(dsWD)
+
+sns.lineplot(x=CS, y=avd, color=color1, linewidth=lw, zorder=10)
+sns.scatterplot(x=CS, y=avd, color=color1, s=si, zorder=11)
+sns.lineplot(x=CS50, y=avd50, color=color2, linewidth=lw, zorder=10)
+sns.scatterplot(x=CS50, y=avd50, color=color2, s=si, zorder=11)
+
+ax.set_ylabel('average travel distance (10$^2$ km)', fontsize=fs, color = color1)
+for tick in ax.yaxis.get_major_ticks():
+                tick.label.set_fontsize(fs)
+ax.set_yticklabels([2,3,4,5,6], fontsize=fs, color=color1)
+ax.set_ylim(1,6.4)
+
+
+for tick in ax.xaxis.get_major_ticks():
+    tick.label.set_fontsize(fs) 
+
+print('average distances:  ', highres_avgd,'   ', avd_temp, '   ', avd)
+
+
+lw = 2
+colo = 'k'
+legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$R_{0.1}$'), 
+             Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$R_{0.1m}$'), 
+             Line2D([0], [0], color=colo, lw=lw, label='$R_{1m}$/ $R_{1md}$')]
+a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .1, 1., .102))
+
+#% final
+fig.subplots_adjust(bottom=0.17)
+cbar_ax = fig.add_axes([0.11, 0.05, 0.35, 0.07])
+cbar_ax.set_visible(False)
+cbar = fig.colorbar(im, ax=cbar_ax, orientation = 'horizontal', fraction = 1.2)#, ticks=[0,5,10,15,20,25])
+cbar.ax.xaxis.set_label_position('bottom')
+cbar.ax.set_xlabel('$10^3$ km', fontsize=fs)
+cbar.ax.tick_params(labelsize=fs) 
+cbar.set_ticklabels([1,2,3]) 
+
+plt.savefig('figure4.pdf',bbox_inches='tight',pad_inches=0)
 plt.show()
