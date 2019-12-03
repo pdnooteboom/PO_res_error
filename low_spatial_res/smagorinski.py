@@ -48,7 +48,6 @@ class kernels:
         A = fieldset.cell_areas[time, 0, particle.lat, particle.lon]
         Vh = fieldset.Cs * A * math.sqrt(dudx**2 + 0.5*(dudy + dvdx)**2 + dvdy**2)
 
-        r = 1/3.
         xres = fieldset.resolutionx # [degrees] 
         yres = fieldset.resolutiony
         dx_cell = fieldset.cell_edge_sizes_x[0, 0, particle.lat, particle.lon] # [meters]
@@ -56,9 +55,9 @@ class kernels:
 
         hitBoundary = True
         tries = 0
-        while hitBoundary and tries <10:
-            dlat = yres * random.uniform(-1., 1.) * math.sqrt(2*math.fabs(particle.dt)* Vh/r) / dy_cell
-            dlon = xres * random.uniform(-1., 1.) * math.sqrt(2*math.fabs(particle.dt)* Vh/r) / dx_cell
+        while hitBoundary and tries <15:
+            dlat = yres * random.normalvariate(0,1) * math.sqrt(2*math.fabs(particle.dt)* Vh) / dy_cell
+            dlon = xres * random.normalvariate(0,1) * math.sqrt(2*math.fabs(particle.dt)* Vh) / dx_cell
             if(fieldset.U[time, particle.depth, particle.lat+dlat, particle.lon+dlon] > 0):
                 if(fieldset.V[time, particle.depth, particle.lat+dlat, particle.lon+dlon] > 0):
                     hitBoundary = False
@@ -71,7 +70,7 @@ class kernels:
                     hitBoundary = False
 
             tries += 1
-            if tries == 10:
+            if tries == 15:
                 dlat = 0
                 dlon = 0
 
