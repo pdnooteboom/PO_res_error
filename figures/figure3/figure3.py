@@ -31,11 +31,11 @@ dd = 10
 projection = ccrs.PlateCarree(180)
 exte = [1, 360, -74, 81]
 exte2 = [-179, 181, -74, 81]
-Cs = 1.0
+Cs = 2.0
 ddeg = 1
 cmap2 = 'coolwarm' # For the surface area
 cmap3 = 'hot'# For the average travel distance
-vssurf = [0,1.7]
+vssurf = [0,17]
 
 #%%
 @jit(nopython=True)
@@ -102,7 +102,7 @@ def surfacef(lat, lon, surface, tsl, vLons, vLats, Lons, Lats, ml):
         surface[i] = surf         
     return surface
 
-def calc_fields(name = '', ml=111):
+def calc_fields(name = '', ml=131):
     ncf = Dataset(name)
     Lons = ncf['Lons'][:]
     Lats = ncf['Lats'][:]
@@ -156,7 +156,7 @@ ax.xaxis.set_major_formatter(lon_formatter)
 ax.yaxis.set_major_formatter(lat_formatter)
 ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
-plt.imshow(surf/1000000., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
+plt.imshow(surf/10**5., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
            cmap=cmap3, zorder = 0)
 plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
 plt.show()
@@ -179,9 +179,9 @@ color1 = 'k'
 color2 = 'red'
 color3 = 'k'
 #% Load the data
-CS =  np.array([0., 0.25, 0.5, 1.0, 1.5, 2.0, 5.0])
-CS50 = np.array([0., 0.25, 0.5, 1.0, 1.5, 2.0, 5.0])
-cs = 1.0
+CS =  np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])
+CS50 = np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])
+cs = 2.0
 
 lsq = np.zeros(len(CS))
 lsq50 = np.zeros(len(CS50))
@@ -218,14 +218,14 @@ plt.show()
 #%% start figure
 fig = plt.figure(figsize=(18,9))
 #%
-avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5_ds2.nc'%(ddeg,sp,dd))
 highres_surf = surf.copy()
 highres_surf[highres_surf==0] = np.nan
 highres_surf = np.nanmean(highres_surf) / 10**5.
 print('highres_surf: ',highres_surf)
 avgd, surf = np.flip(avgd,0), np.flip(surf,0)
 #% Define the length of the time series at every releaselocation
-nchr = Dataset('/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
+nchr = Dataset('/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5_ds2.nc'%(ddeg,sp,dd))
 ml = np.full(len(nchr['vLons'][:]), -1)
 for locs in range(len(nchr['vLons'][:])):
     ml[locs] = nchr['tslens'][locs]
@@ -247,12 +247,12 @@ g.yformatter = LATITUDE_FORMATTER
 g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
 ax.set_extent(exte, ccrs.PlateCarree())
 
-plt.imshow(surf/1000000., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
+plt.imshow(surf/10.**5, vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
            cmap=cmap3, zorder = 0)
 land = np.full(avgd.shape, np.nan); land[surf==0] = 1;
 plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
 #%subplot (b)
-avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/LOWres/timeseries/timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(0.0,ddeg,sp,dd))
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(0.0,ddeg,sp,dd))
 avgd, surf = np.flip(avgd,0), np.flip(surf,0)
 #% subplot (b)
 ax = plt.subplot(2,2,2, projection=projection)
@@ -280,7 +280,7 @@ ax.xaxis.set_major_formatter(lon_formatter)
 ax.yaxis.set_major_formatter(lat_formatter)
 ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
-plt.imshow(surf/1000000., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
+plt.imshow(surf/10**5., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
            cmap=cmap3, zorder = 0)
 land = np.full(avgd.shape, np.nan); land[surf==0] = 1;
 plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
@@ -313,7 +313,7 @@ ax.xaxis.set_major_formatter(lon_formatter)
 ax.yaxis.set_major_formatter(lat_formatter)
 ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
-im2 = plt.imshow(surf/1000000., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
+im2 = plt.imshow(surf/10**5., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
            cmap=cmap3, zorder = 0)
 land = np.full(avgd.shape, np.nan); land[surf==0] = 1;
 plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
@@ -358,7 +358,7 @@ colo = 'k'
 legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$R_{0.1}$'), 
              Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$R_{0.1m}$'), 
              Line2D([0], [0], color=colo, lw=lw, label='$R_{1m}$/ $R_{1md}$')]
-a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .1, 1., .102))
+a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .01, 1., .022))
 
 #% final
 fig.subplots_adjust(bottom=0.17)
@@ -366,7 +366,7 @@ cbar_ax = fig.add_axes([0.11, 0.05, 0.35, 0.07])
 cbar_ax.set_visible(False)
 cbar = fig.colorbar(im2, ax=cbar_ax, orientation = 'horizontal', fraction = 1.2)
 cbar.ax.xaxis.set_label_position('bottom')
-cbar.ax.set_xlabel('$10^6$ km$^2$', fontsize=fs)
+cbar.ax.set_xlabel('$10^5$ km$^2$', fontsize=fs)
 cbar.ax.tick_params(labelsize=fs) 
 cbar.set_ticklabels([1,2,3,4]) 
 

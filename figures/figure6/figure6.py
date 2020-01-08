@@ -26,26 +26,29 @@ projection = ccrs.PlateCarree()
 size = 11
 cmap='rainbow'
 
-lat= -50
-lon = 240
+lat= -49.5
+lon = 240.5
 #lat2= 40
 #lon2 = 220
-lat2= 40
-lon2 = 219
+lat2= 40.5
+lon2 = 219.5
 
 #lat3= -40
 #lon3 = 25
-lat3= -37
-lon3 = 19
-
+#lat3= -37
+#lon3 = 19
+lat3= -44.5
+lon3 = 20.5
 
 #lat4= -55
 #lon4 = 150
-lat4= -55
-lon4 = 140
+#lat4= -55
+#lon4 = 140
 #lat4= -47
 #lon4 = 130
 
+lon4 = 142.5
+lat4 = -52.5
 
 width = 50
 hei = 15
@@ -57,9 +60,9 @@ exte3 = [(lon3-26), lon3+38, lat3-hei, lat3+25]
 exte4 = [(lon4-55)-4, lon4+20, lat4-15, lat4+21]
 
 
-width = 70/1.5
+width = 80/1.5
 height = 40/1.5
-width2 = 70
+width2 = 80
 height2 = 40
 
 r1 = -15
@@ -68,17 +71,17 @@ exte = [-360+lon-width/2.+r1, -360+lon+width/2.+r1, lat-height/2.+u1, lat+height
 r2 = -0
 u2 = 2
 exte2 = [-360+lon2-width/2+r2, -360+lon2+width/2+r2, lat2-height/2+u2, lat2+height/2+u2]
-r1 = 10
+r1 = 0
 u1 = 7
 exte3 = [-360+lon3-width2/2.+r1, -360+lon3+width2/2.+r1, lat3-height2/2.+u1, lat3+height2/2.+u1]
-r2 = -20
+r2 = -22
 u2 = 2
 exte4 = [-360+lon4-width2/2.+r2, -360+lon4+width2/2.+r2, lat4-height2/2.+u2, lat4+height2/2.+u2]
 
 ddeg = 1
 sp = 6
 dd = 10
-cs = 1.0
+cs = 2.0
 
 fs = 16
 

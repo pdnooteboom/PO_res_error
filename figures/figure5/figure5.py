@@ -26,11 +26,11 @@ projection = ccrs.PlateCarree()
 size = 17
 cmap='rainbow'
 
-lat= -47
-lon = 42
+lat= -46.5
+lon = 42.5
 
-lat2= -46
-lon2 = 39
+lat2= -45.5
+lon2 = 39.5
 
 
 width = 55

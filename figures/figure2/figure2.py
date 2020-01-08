@@ -38,8 +38,8 @@ color1 = 'k'
 color2 = 'red'
 color3 = 'dodgerblue'
 #%% Load the data
-CS =  np.array([0., 0.25, 0.5, 1.0, 1.5, 2.0, 5.0])
-CS50 = np.array([0., 0.25, 0.5, 1.0, 1.5, 2.0, 5.0])
+CS =  np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])
+CS50 = np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])
 cs = 2.0
 
 highres_avgd = 5535.848817 / 1000.
@@ -114,7 +114,7 @@ ax0.yaxis.set_major_formatter(lat_formatter)
 ax0.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
 #%% Second subplot for the lowres monthly Wd
-ncf_mm = Dataset(dirRead + 'OTs_monmean4.nc')
+ncf_mm = Dataset(dirRead + 'OTs_monmean6.nc')
 distance_mm = np.flip(ncf_mm['Wasserstein distance'][:],0)   
 mean_distance_mm = np.nanmean(distance_mm)
 
@@ -132,7 +132,7 @@ g.xlabels_bottom = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
-g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
+g.ylocator = mticker.FixedLocator([-50,-25, 0, 25, 50, 75, 100])
 
 g.xlabel_style = {'fontsize': fs}
 g.ylabel_style = {'fontsize': fs}
@@ -206,7 +206,7 @@ a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_a
 ax0 = plt.subplot(2,2,3, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs)
-plt.title('(c) $R_{0.1}$ vs. $R_{1md}$, $c_s=1$', fontsize=fs)
+plt.title('(c) $R_{0.1}$ vs. $R_{1md}$, $c_s=%.1f$'%(cs), fontsize=fs)
 g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
@@ -236,6 +236,7 @@ ax0.xaxis.set_major_formatter(lon_formatter)
 ax0.yaxis.set_major_formatter(lat_formatter)
 ax0.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
+#%%
 fig.subplots_adjust(bottom=0.17)
 cbar_ax = fig.add_axes([0.11, 0.0, 0.35, 0.07])
 cbar_ax.set_visible(False)
