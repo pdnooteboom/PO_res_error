@@ -274,6 +274,12 @@ land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
 avgd[avgd==0] = np.nan
 avd_temp = mean_latitudeweigthed(avgd, Lats) / 100.
 
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp25_dd10_tempresmonmean.nc')
+avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+avgd[avgd==0] = np.nan
+avd_temp2 = mean_latitudeweigthed(avgd, Lats) / 100.
+
 lsq = np.zeros(len(CS))
 lsq50 = np.zeros(len(CS50))
 avd50 = np.zeros(len(CS50))
@@ -324,6 +330,9 @@ a0.lines[1].set_linestyle(":")
 a0 = sns.lineplot(x=CS, y=np.full(len(CS),avgd50mean), linewidth=lw,
                    color=color2, zorder=1)
 a0.lines[2].set_dashes(dsWD)
+a0 = sns.lineplot(x=CS, y=np.full(len(CS),avd_temp2), linewidth=lw,
+                   color=color2, zorder=1)
+a0.lines[3].set_linestyle(":")
 
 sns.lineplot(x=CS, y=avd, color=color1, linewidth=lw, zorder=10)
 sns.scatterplot(x=CS, y=avd, color=color1, s=si, zorder=11)
@@ -348,11 +357,17 @@ colo = 'k'
 legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$R_{0.1}$'), 
              Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$R_{0.1m}$'), 
              Line2D([0], [0], color=colo, lw=lw, label='$R_{1m}$/ $R_{1md}$')]
-a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .2, 1., .202))
+first_legend = plt.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .3, 1., .202))
+
+ax2 = plt.gca().add_artist(first_legend)
+
+legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
+             Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
+plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., -.01, 1., .102))
 
 #% final
 fig.subplots_adjust(bottom=0.17)
-cbar_ax = fig.add_axes([0.11, 0.05, 0.5, 0.07])
+cbar_ax = fig.add_axes([0.11, 0.05, 0.35, 0.07])
 cbar_ax.set_visible(False)
 cbar = fig.colorbar(im, ax=cbar_ax, orientation = 'horizontal', fraction = 1.2)#, ticks=[0,5,10,15,20,25])
 cbar.ax.xaxis.set_label_position('bottom')

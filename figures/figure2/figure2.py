@@ -114,13 +114,16 @@ ax0.yaxis.set_major_formatter(lat_formatter)
 ax0.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
 #%% Second subplot for the lowres monthly Wd
-ncf_mm = Dataset(dirRead + 'OTs_monmean6.nc')
-distance_mm = np.flip(ncf_mm['Wasserstein distance'][:],0)   
+ncf_mm = Dataset(dirRead + 'OTs_monmean_sp25.nc')
+distance_mm = np.flip(ncf_mm['Wasserstein distance'][:],0)
+mean_distance_mm2 = np.nanmean(distance_mm)
+ncf_mm = Dataset(dirRead + 'OTs_monmean_sp6.nc')
+distance_mm = np.flip(ncf_mm['Wasserstein distance'][:],0)
 mean_distance_mm = np.nanmean(distance_mm)
 
 ax0 = plt.subplot(2,2,1, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
-                tick.label.set_fontsize(fs) 
+                tick.label.set_fontsize(fs)
 
 plt.title('(a) $R_{0.1}$ vs. $R_{0.1m}$', fontsize=fs)
 ax0.add_feature(cartopy.feature.LAND, color='gray')
@@ -173,10 +176,10 @@ plt.xlabel('$c_s$', fontsize=fs)
 plt.ylabel('Mean $W_d$ (10$^{5}$ km)', fontsize=fs, color=color1)
 
 # the wasserstein axis
-ax.set_yticklabels(labels=[0,1,2,3,4,5],fontsize=fs, color='k')
+ax.set_yticklabels(labels=[-1,0,1,2,3,4,5],fontsize=fs, color='k')
 
 sns.lineplot(x=CS,y=lsq/10**5, linewidth = lw, ax=ax, color=color1, 
-             zorder=10)
+             zorder=9)
 
 a0 = sns.lineplot(x=CS,y=np.full(len(lsq), mean_distance_mm/10**5), 
                   linewidth = lw, ax=ax, color=color1, zorder=10)
@@ -184,10 +187,13 @@ a0.lines[1].set_linestyle(":")
 sns.lineplot(x=CS,y=lsqnull/10**5, linewidth = lw, ax=ax, color=color1, 
              zorder=10)
 a0.lines[2].set_dashes(dsWD)
-sns.scatterplot(x=CS,y=lsq/10**5, ax=ax, color=color1, s=si, zorder=11,
+a0 = sns.lineplot(x=CS,y=np.full(len(lsq), mean_distance_mm2/10**5), 
+                  linewidth = lw, ax=ax, color=color2, zorder=10)
+a0.lines[3].set_linestyle(":")
+sns.scatterplot(x=CS,y=lsq/10**5, ax=ax, color=color1, s=si, zorder=9,
                    legend=False)
 sns.lineplot(x=CS50,y=lsq50/10**5, linewidth = lw, ax=ax, color=color2, 
-             zorder=11)
+             zorder=9)
 sns.scatterplot(x=CS50,y=lsq50/10**5, ax=ax, color=color2, s=si, zorder=10,
                    legend=False)#marker="^")
 print('Wds: ', lsq/10**5, lsqnull/10**5, lsq50/10**5)
@@ -198,10 +204,16 @@ for tick in ax.xaxis.get_major_ticks():
 
 lw = 2
 colo = 'k'
-legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$R_{0.1}$ vs. $R_{0.1}$'), 
-             Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$R_{0.1}$ vs. $R_{0.1m}$'), 
-             Line2D([0], [0], color=colo, lw=lw, label='$R_{0.1}$ vs. $R_{1m}$/ $R_{1md}$')]
-a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .15, 1., .102))
+legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{0.1})$'), 
+             Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{0.1m})$'), 
+             Line2D([0], [0], color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{1m}$/ $R_{1md}$)')]
+first_legend = plt.legend(handles=legend_el,loc=4, fontsize=fs, bbox_to_anchor=(0., .15, 1., .102))#, title='Configuration'
+
+ax2 = plt.gca().add_artist(first_legend)
+
+legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
+             Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
+plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .65, 1., .102))
 # %%third subplot
 ax0 = plt.subplot(2,2,3, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():

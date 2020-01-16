@@ -42,8 +42,8 @@ height2 = height
 r1 = -19
 u1 = 0
 exte = [-360+lon-width/2.+r1, -360+lon+width/2.+r1, lat-height/2.+u1, lat+height/2.+u1]
-r2 = -13
-u2 = 2
+r2 = -16
+u2 = 0
 exte2 = np.array([-360+lon2-width2/2.+r2, -360+lon2+width2/2.+r2, lat2-height2/2.+u2, lat2+height2/2.+u2])
 
 xloc = np.arange(-180, 180, 20)
@@ -128,13 +128,14 @@ g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_left = False
+g.ylabels_right = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlabel_style = {'fontsize': fs-2}
 g.ylabel_style = {'fontsize': fs-2}
 g.xlocator = mticker.FixedLocator(xloc)
 g.ylocator = mticker.FixedLocator(yloc)
-ax0.set_extent(exte, ccrs.PlateCarree())
+ax0.set_extent(exte2, ccrs.PlateCarree())
 
 plt.scatter(hxs, hys, c=ch, s=size, label='$R_{0.1}$', alpha=opac)
 plt.scatter(lxs, lys, c=cl, s=size, label='$R_{0.1m}$', alpha=opac)

@@ -161,6 +161,12 @@ plt.imshow(surf/10**5., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transfor
 plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
 plt.show()
 #%%
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp25_dd10_tempresmonmean.nc')
+avgd, surf = np.flip(avgd,0), np.flip(surf,0)
+land = np.full(avgd.shape, np.nan); land[surf==0] = 1;
+surf[surf==0] = np.nan
+surf_temp2 = np.nanmean(surf) / 10**5.
+#%%
 
 avgd50, surf50hr, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp25_dd10_tempres5.nc')
 surf50hr[surf50hr==0] = np.nan
@@ -336,6 +342,9 @@ a0.lines[1].set_linestyle(":")
 a0 = sns.lineplot(x=CS, y=np.full(len(CS),surf50mean), linewidth=lw,
                    color=color2, zorder=1)
 a0.lines[2].set_dashes(dsWD)
+a0 = sns.lineplot(x=CS, y=np.full(len(CS),surf_temp2), linewidth=lw,
+                   color=color2, zorder=1)
+a0.lines[3].set_linestyle(":")
 
 sns.lineplot(x=CS, y=sur, color=color1, linewidth=lw, zorder=10)
 sns.scatterplot(x=CS, y=sur, color=color1, s=si, zorder=11)
@@ -358,7 +367,15 @@ colo = 'k'
 legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$R_{0.1}$'), 
              Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$R_{0.1m}$'), 
              Line2D([0], [0], color=colo, lw=lw, label='$R_{1m}$/ $R_{1md}$')]
-a0.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .01, 1., .022))
+first_legend = plt.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .01, 1., .022))
+
+
+ax2 = plt.gca().add_artist(first_legend)
+
+legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
+             Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
+plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .52, 1., .102))
+
 
 #% final
 fig.subplots_adjust(bottom=0.17)
