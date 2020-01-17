@@ -77,11 +77,12 @@ lsqnull = np.nanmean(ncf['Wasserstein distance'][:])
 ncf.close()
 #%%
 fig = plt.figure(figsize=(18,9))
+grid = plt.GridSpec(2, 24, wspace=0.4, hspace=0.3)
 #%% First subplot for the highres monthly Wd
-ax0 = plt.subplot(2,2,2, projection=projection)
+ax0 = plt.subplot(grid[0, :12], projection=projection)#plt.subplot(2,2,2, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs) 
-plt.title('(b) $R_{0.1}$ vs. $R_{1m}$', fontsize=fs)
+plt.title('(b) $W_d(R_{0.1}, R_{1m})$', fontsize=fs)
 ax0.add_feature(cartopy.feature.LAND, color='gray')
 g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -112,7 +113,6 @@ lat_formatter = cticker.LatitudeFormatter()
 ax0.xaxis.set_major_formatter(lon_formatter)
 ax0.yaxis.set_major_formatter(lat_formatter)
 ax0.grid(linewidth=2, color='black', alpha=0., linestyle='--')
-
 #%% Second subplot for the lowres monthly Wd
 ncf_mm = Dataset(dirRead + 'OTs_monmean_sp25.nc')
 distance_mm = np.flip(ncf_mm['Wasserstein distance'][:],0)
@@ -121,11 +121,11 @@ ncf_mm = Dataset(dirRead + 'OTs_monmean_sp6.nc')
 distance_mm = np.flip(ncf_mm['Wasserstein distance'][:],0)
 mean_distance_mm = np.nanmean(distance_mm)
 
-ax0 = plt.subplot(2,2,1, projection=projection)
+ax0 = plt.subplot(grid[0, 12:], projection=projection)#plt.subplot(2,2,1, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs)
 
-plt.title('(a) $R_{0.1}$ vs. $R_{0.1m}$', fontsize=fs)
+plt.title('(a) $W_d(R_{0.1},R_{0.1m})$', fontsize=fs)
 ax0.add_feature(cartopy.feature.LAND, color='gray')
 g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -169,7 +169,7 @@ def make_patch_spines_invisible(ax):
 
 dsWD = [4,7,4,7] # the line dash of the first configuration
 
-ax = plt.subplot(2,2,4)
+ax = plt.subplot(grid[1, 13:-3])#plt.subplot(2,4,7)
 plt.title('(d)', fontsize=fs)
 
 plt.xlabel('$c_s$', fontsize=fs)
@@ -207,18 +207,21 @@ colo = 'k'
 legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{0.1})$'), 
              Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{0.1m})$'), 
              Line2D([0], [0], color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{1m}$/ $R_{1md}$)')]
-first_legend = plt.legend(handles=legend_el,loc=4, fontsize=fs, bbox_to_anchor=(0., .15, 1., .102))#, title='Configuration'
+#first_legend = ax.legend(handles=legend_el,loc=4, fontsize=fs, bbox_to_anchor=(0., .15, 1., .102))#, title='Configuration'
+first_legend = ax.legend(handles=legend_el, fontsize=fs, loc='center left', bbox_to_anchor=(1, 0.2))
 
 ax2 = plt.gca().add_artist(first_legend)
 
 legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
              Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
-plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .65, 1., .102))
+#plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .65, 1., .102))
+ax.legend(handles=legend_el, title='Sinking speed (m/day)', fontsize=fs, loc='center left', bbox_to_anchor=(1, 0.8))
+
 # %%third subplot
-ax0 = plt.subplot(2,2,3, projection=projection)
+ax0 = plt.subplot(grid[1, :12], projection=projection)#plt.subplot(2,2,3, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs)
-plt.title('(c) $R_{0.1}$ vs. $R_{1md}$, $c_s=%.1f$'%(cs), fontsize=fs)
+plt.title('(c) $W_d(R_{0.1}, R_{1md})$, $c_s=%.1f$'%(cs), fontsize=fs)
 g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False

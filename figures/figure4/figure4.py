@@ -149,6 +149,7 @@ def calc_fields(name = '', ml=131):
     return avgdist,surface, Lons, Lats
 #%% start figure
 fig = plt.figure(figsize=(18,9))
+grid = plt.GridSpec(2, 24, wspace=0.4, hspace=0.3)
 #%%
 avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5_ds2.nc'%(ddeg,sp,dd))
 avgd, surf = np.flip(avgd,0), np.flip(surf,0)
@@ -159,7 +160,7 @@ for locs in range(len(nchr['vLons'][:])):
     ml[locs] = nchr['tslens'][locs]
 
 #%% Subplot (a) highres
-ax0 = plt.subplot(2,2,1, projection=projection)
+ax0 = plt.subplot(grid[0, :12], projection=projection)#plt.subplot(2,2,1, projection=projection)
 plt.title('(a)$R_{0.1}$', fontsize=fs)
 g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -182,7 +183,7 @@ plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(),
 avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(0.0,ddeg,sp,dd))
 avgd, surf = np.flip(avgd,0), np.flip(surf,0)
 #%%
-ax = plt.subplot(2,2,2, projection=projection)
+ax = plt.subplot(grid[0, 12:], projection=projection)#plt.subplot(2,2,2, projection=projection)
 plt.title('(b) $R_{1m}$', fontsize=fs)
 
 g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -214,7 +215,7 @@ plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(),
 avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(Cs,ddeg,sp,dd))
 avgd, surf = np.flip(avgd,0), np.flip(surf,0)
 #%% subplot (c)
-ax = plt.subplot(2,2,3, projection=projection)
+ax = plt.subplot(grid[1, :12], projection=projection)#plt.subplot(2,2,3, projection=projection)
 plt.title('(c) $R_{1md}$, $c_s=%.1f$'%(Cs), fontsize=fs)
 
 g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -316,7 +317,7 @@ avgd50mean = mean_latitudeweigthed(avgd, Lats) / 100.
 
 dsWD = [4,7,4,7] # the line dash of the first configuration
 
-ax = plt.subplot(2,2,4)
+ax = plt.subplot(grid[1, 13:-2])#plt.subplot(2,2,4)
 plt.title('(d)', fontsize=fs)
 
 plt.xlabel('$c_s$', fontsize=fs)
@@ -357,13 +358,15 @@ colo = 'k'
 legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$R_{0.1}$'), 
              Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$R_{0.1m}$'), 
              Line2D([0], [0], color=colo, lw=lw, label='$R_{1m}$/ $R_{1md}$')]
-first_legend = plt.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .3, 1., .202))
+#first_legend = plt.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .3, 1., .202))
+first_legend = ax.legend(handles=legend_el, fontsize=fs, title='Configuration', loc='center left', bbox_to_anchor=(1, 0.2))
 
 ax2 = plt.gca().add_artist(first_legend)
 
 legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
              Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
-plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., -.01, 1., .102))
+#plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., -.01, 1., .102))
+ax.legend(handles=legend_el, title='Sinking speed (m/day)', fontsize=fs, loc='center left', bbox_to_anchor=(1, 0.8))
 
 #% final
 fig.subplots_adjust(bottom=0.17)

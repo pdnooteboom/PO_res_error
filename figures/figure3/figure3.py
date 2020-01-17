@@ -132,34 +132,34 @@ land = np.full(avgd.shape, np.nan); land[surf==0] = 1;
 surf[surf==0] = np.nan
 surf_temp = np.nanmean(surf) / 10**5.
 
-fig = plt.figure(figsize=(10,8))
-ax = plt.subplot(1,1,1, projection=projection)
-plt.title('0.1$^{\circ}$, monthly, $c_s$=0', fontsize=fs)
-
-g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                  linewidth=1, color='gray', alpha=0.5, linestyle='--')
-g.xlabels_top = False
-g.ylabels_right = False
-g.xlabel_style = {'fontsize': fs}
-g.ylabel_style = {'fontsize': fs}
-g.xformatter = LONGITUDE_FORMATTER
-g.yformatter = LATITUDE_FORMATTER
-g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
-g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
-ax.set_extent(exte, ccrs.PlateCarree())
-
-ax.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
-ax.set_xticklabels([0., 90., 180., 270., 360.], fontsize=fs)
-lon_formatter = cticker.LongitudeFormatter()
-lat_formatter = cticker.LatitudeFormatter()
-ax.xaxis.set_major_formatter(lon_formatter)
-ax.yaxis.set_major_formatter(lat_formatter)
-ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
-
-plt.imshow(surf/10**5., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
-           cmap=cmap3, zorder = 0)
-plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
-plt.show()
+#fig = plt.figure(figsize=(10,8))
+#ax = plt.subplot(1,1,1, projection=projection)
+#plt.title('0.1$^{\circ}$, monthly, $c_s$=0', fontsize=fs)
+#
+#g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+#                  linewidth=1, color='gray', alpha=0.5, linestyle='--')
+#g.xlabels_top = False
+#g.ylabels_right = False
+#g.xlabel_style = {'fontsize': fs}
+#g.ylabel_style = {'fontsize': fs}
+#g.xformatter = LONGITUDE_FORMATTER
+#g.yformatter = LATITUDE_FORMATTER
+#g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
+#g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
+#ax.set_extent(exte, ccrs.PlateCarree())
+#
+#ax.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
+#ax.set_xticklabels([0., 90., 180., 270., 360.], fontsize=fs)
+#lon_formatter = cticker.LongitudeFormatter()
+#lat_formatter = cticker.LatitudeFormatter()
+#ax.xaxis.set_major_formatter(lon_formatter)
+#ax.yaxis.set_major_formatter(lat_formatter)
+#ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
+#
+#plt.imshow(surf/10**5., vmin=vssurf[0], vmax=vssurf[1], extent = exte2, transform=ccrs.PlateCarree(), 
+#           cmap=cmap3, zorder = 0)
+#plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
+#plt.show()
 #%%
 avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp25_dd10_tempresmonmean.nc')
 avgd, surf = np.flip(avgd,0), np.flip(surf,0)
@@ -223,6 +223,7 @@ plt.scatter([0], [surf_temp])
 plt.show()
 #%% start figure
 fig = plt.figure(figsize=(18,9))
+grid = plt.GridSpec(2, 24, wspace=0.4, hspace=0.3)
 #%
 avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5_ds2.nc'%(ddeg,sp,dd))
 highres_surf = surf.copy()
@@ -237,7 +238,7 @@ for locs in range(len(nchr['vLons'][:])):
     ml[locs] = nchr['tslens'][locs]
 
 #% subplot (a)
-ax = plt.subplot(2,2,1, projection=projection)
+ax = plt.subplot(grid[0, :12], projection=projection)#plt.subplot(2,2,1, projection=projection)
 plt.title('(a) $R_{0.1}$', fontsize=fs)
 
 g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -261,7 +262,7 @@ plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(),
 avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(0.0,ddeg,sp,dd))
 avgd, surf = np.flip(avgd,0), np.flip(surf,0)
 #% subplot (b)
-ax = plt.subplot(2,2,2, projection=projection)
+ax = plt.subplot(grid[0, 12:], projection=projection)#plt.subplot(2,2,2, projection=projection)
 plt.title('(b) $R_{1m}$', fontsize=fs)
 
 g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -295,7 +296,7 @@ plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(),
 avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(Cs,ddeg,sp,dd))
 avgd, surf = np.flip(avgd,0), np.flip(surf,0)
 #% subplot (c)
-ax = plt.subplot(2,2,3, projection=projection)
+ax = plt.subplot(grid[1, :12], projection=projection)#plt.subplot(2,2,3, projection=projection)
 plt.title('(c) $R_{1md}$, $c_s$=%.1f'%(Cs), fontsize=fs)
 
 g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -328,7 +329,7 @@ plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(),
 
 dsWD = [4,7,4,7] # the line dash of the first configuration
 
-ax = plt.subplot(2,2,4)
+ax = plt.subplot(grid[1, 13:-2])#plt.subplot(2,2,4)
 plt.title('(d)', fontsize=fs)
 
 plt.xlabel('$c_s$', fontsize=fs)
@@ -367,14 +368,16 @@ colo = 'k'
 legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$R_{0.1}$'), 
              Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$R_{0.1m}$'), 
              Line2D([0], [0], color=colo, lw=lw, label='$R_{1m}$/ $R_{1md}$')]
-first_legend = plt.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .01, 1., .022))
+#first_legend = plt.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .01, 1., .022))
+first_legend = ax.legend(handles=legend_el, title='Configuration', fontsize=fs, loc='center left', bbox_to_anchor=(1, 0.2))
 
 
 ax2 = plt.gca().add_artist(first_legend)
 
 legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
              Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
-plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .52, 1., .102))
+#plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .52, 1., .102))
+ax.legend(handles=legend_el, title='Sinking speed (m/day)', fontsize=fs, loc='center left', bbox_to_anchor=(1, 0.8))
 
 
 #% final
