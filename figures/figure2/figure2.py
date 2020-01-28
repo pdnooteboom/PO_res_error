@@ -20,7 +20,7 @@ from matplotlib.lines import Line2D
 
 #Some parameters for the figure
 projection = ccrs.PlateCarree(180)
-exte = [1, 360, -75, 81]
+exte = [1, 360, -75, 81]#[-179, 181, -76, 86]#[1,359,-75,81]#
 exte2 = exte
 extemm = [-179, 181, -76, 86]
 cmap = 'viridis'
@@ -79,7 +79,7 @@ ncf.close()
 fig = plt.figure(figsize=(18,9))
 grid = plt.GridSpec(2, 24, wspace=0.4, hspace=0.3)
 #%% First subplot for the highres monthly Wd
-ax0 = plt.subplot(grid[0, :12], projection=projection)#plt.subplot(2,2,2, projection=projection)
+ax0 = plt.subplot(grid[0, 12:], projection=projection)#plt.subplot(2,2,2, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs) 
 plt.title('(b) $W_d(R_{0.1}, R_{1m})$', fontsize=fs)
@@ -88,6 +88,7 @@ g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_right = False
+g.ylabels_left = False
 g.xlabels_bottom = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
@@ -99,6 +100,7 @@ g.xlabels_bottom = False
 g.ylabel_style = {'fontsize': fs}
 ax0.set_extent(exte, ccrs.PlateCarree())
 
+distance_cs0 = distance_cs0[:,:-1]
 im = plt.imshow(distance_cs0, extent = exte2,
                 transform=ccrs.PlateCarree(), cmap=cmap, zorder = 0,
                 norm=colors.LogNorm(vmin=10000, vmax=5*10**6))
@@ -121,7 +123,7 @@ ncf_mm = Dataset(dirRead + 'OTs_monmean_sp6.nc')
 distance_mm = np.flip(ncf_mm['Wasserstein distance'][:],0)
 mean_distance_mm = np.nanmean(distance_mm)
 
-ax0 = plt.subplot(grid[0, 12:], projection=projection)#plt.subplot(2,2,1, projection=projection)
+ax0 = plt.subplot(grid[0, :12], projection=projection)#plt.subplot(2,2,1, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs)
 
@@ -149,8 +151,8 @@ im = plt.imshow(distance_mm, extent = extemm,
 land = np.full(distance_mm.shape, np.nan); land[np.isnan(distance_mm)] = 1;
 plt.imshow(land, vmin=0, vmax=2.3, extent = extemm, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
 
-ax0.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
-ax0.set_xticklabels([0., 90., 180., 270., 360.])
+#ax0.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
+#ax0.set_xticklabels([0., 90., 180., 270., 360.])
 
 lon_formatter = cticker.LongitudeFormatter()
 lat_formatter = cticker.LatitudeFormatter()
@@ -236,6 +238,7 @@ g.xlabel_style = {'fontsize': fs}
 g.ylabel_style = {'fontsize': fs}
 ax0.set_extent(exte, ccrs.PlateCarree())
 
+distance = distance[:,:-1]
 im = plt.imshow(distance, extent = exte2,
                 transform=ccrs.PlateCarree(), cmap=cmap, zorder = 0,
                 norm=colors.LogNorm(vmin=10000, vmax=5*10**6))

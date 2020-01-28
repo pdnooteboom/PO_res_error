@@ -137,8 +137,10 @@ g.xlocator = mticker.FixedLocator(xloc)
 g.ylocator = mticker.FixedLocator(yloc)
 ax0.set_extent(exte2, ccrs.PlateCarree())
 
-plt.scatter(hxs, hys, c=ch, s=size, label='$R_{0.1}$', alpha=opac)
-plt.scatter(lxs, lys, c=cl, s=size, label='$R_{0.1m}$', alpha=opac)
+print(len(hxs[~hxs.mask]),len(lxs[~lxs.mask]))
+lents = min(len(hxs[~hxs.mask]),len(lxs[~lxs.mask]))
+plt.scatter(hxs[:lents], hys[:lents], c=ch, s=size, label='$R_{0.1}$', alpha=opac)
+plt.scatter(lxs[:lents], lys[:lents], c=cl, s=size, label='$R_{0.1m}$', alpha=opac)
 plt.scatter(llo+0.5, lla+0.5 ,c='k', marker='P', s=150)
 plt.legend(loc=4, fontsize=fs-4, title='configuration')
 
@@ -158,9 +160,11 @@ g.xlabel_style = {'fontsize': fs}
 g.ylabel_style = {'fontsize': fs}
 ax0.set_extent(exte2, ccrs.PlateCarree())
 
-plt.scatter(lxs2, lys2, c=cl, s=size, label='1', alpha=opac)
-plt.scatter(hxs2, hys2, c=ch, s=size, label='0.1', alpha=opac)
-plt.scatter(llo2+0.5, lla2+0.5 ,c='k', marker='P', s=150)#'+'
+print(len(hxs2[~hxs2.mask]),len(lxs2[~lxs2.mask]))
+lents = min(len(hxs2[~hxs2.mask]),len(lxs2[~lxs2.mask]))
+plt.scatter(lxs2[:lents], lys2[:lents], c=cl, s=size, label='1', alpha=opac)
+plt.scatter(hxs2[:lents], hys2[:lents], c=ch, s=size, label='0.1', alpha=opac)
+plt.scatter(llo2+0.5, lla2+0.5 ,c='k', marker='P', s=150)
 
 #%%
 plt.savefig('figure5.pdf',bbox_inches='tight',pad_inches=0)

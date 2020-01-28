@@ -190,6 +190,7 @@ g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
 g.ylabels_right = False
+g.ylabels_left = False
 g.xlabels_bottom = False
 g.xlabel_style = {'fontsize': fs}
 g.ylabel_style = {'fontsize': fs}
