@@ -29,10 +29,9 @@ matplotlib.rc('font', **font)
 sp = 6
 dd = 10
 projection = ccrs.PlateCarree(180)
-#exte = [1, 360, -74, 81]
 exte = [1, 360, -75, 72]
-exte2 = exte #[-179, 181, -74, 81]
-Cs = 5.0
+exte2 = [-179, 181, -75, 72]
+Cs = 2.0
 ddeg = 1
 cmap2 = 'coolwarm' # For the surface area
 cmap3 = 'hot'# For the average travel distance
@@ -89,7 +88,6 @@ def avgdistf(lat, lon, avgdist, tsl, vLons, vLats, ml):
     return avgdist
 
 def mean_latitudeweigthed(avgd, lats):
-#    result = np.nanmean(avgd)
     weights = np.zeros(avgd.shape)
     for i in range(weights.shape[0]):
         for j in range(weights.shape[1]):
@@ -149,7 +147,7 @@ def calc_fields(name = '', ml=131):
     Lons = np.append(Lons[180:-2]-360,Lons[:180])
     
     return avgdist,surface, Lons, Lats
-#%% Load all the files
+    #%% Load all the files
 maxminlat = -76
 minmaxlat = 71
 minmaxlon = 359 - 180
@@ -172,6 +170,12 @@ idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
 idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
 assert (idxlon==True).all()
 avgd_m = np.flip(avgd[idxlat],0)
+
+avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(Cs,ddeg,sp,dd))
+idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
+idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
+assert (idxlon==True).all()
+avgd_m2 = np.flip(avgd[idxlat],0)
 
 CS =  np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])#np.array([0.0,0.5, 2.0 ,  3.0,   6.0, 15.0])
 CS50 = np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])#np.array([0.0, 1.5, 3.0, 4.5])
@@ -214,7 +218,7 @@ for j in range(len(CS)):
     idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
     assert (idxlon==True).all()
     avgd = np.flip(avgd[idxlat],0)
-    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+#    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
     avgd[avgd==0] = np.nan
     avd[j] = mean_latitudeweigthed(avgd, Lats)  / 100.
     if(CS[j]!=0.25):
@@ -225,7 +229,7 @@ for j in range(len(CS)):
     idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
     assert (idxlon==True).all()
     avgd = np.flip(avgd[idxlat],0)
-    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+#    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
     avgd[avgd==0] = np.nan
     avdgm[j] = mean_latitudeweigthed(avgd, Lats)  / 100.
 
@@ -238,7 +242,7 @@ for j in range(len(CS50)):
     idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
     assert (idxlon==True).all()
     avgd = np.flip(avgd[idxlat],0)
-    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+#    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
     avgd[avgd==0] = np.nan
     avd50[j] = mean_latitudeweigthed(avgd, Lats)  / 100.
     if(CS50[j]!=0.25):
@@ -249,18 +253,19 @@ for j in range(len(CS50)):
     idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
     assert (idxlon==True).all()
     avgd = np.flip(avgd[idxlat],0)
-    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
+#    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
     avgd[avgd==0] = np.nan
     avd50gm[j] = mean_latitudeweigthed(avgd, Lats)  / 100.
 
 avgd50, surf50, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp25_dd10_tempresmonmean.nc')
 avgd50mean = mean_latitudeweigthed(avgd50, Lats) / 100.
 
+
 #%% start figure
-fig = plt.figure(figsize=(19,9))
-grid = plt.GridSpec(2, 24, wspace=0., hspace=0.2)
+fig = plt.figure(figsize=(19,15))
+grid = plt.GridSpec(3, 24, wspace=0., hspace=0.4)
 #% Subplot (a) highres
-ax0 = plt.subplot(grid[0, :12], projection=projection)
+ax0 = plt.subplot(grid[0, :12], projection=projection)#plt.subplot(2,2,1, projection=projection)
 plt.title('(a)$R_{0.1}$', fontsize=fs)
 g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -277,10 +282,10 @@ ax0.set_extent(exte, ccrs.PlateCarree())
 
 plt.imshow(avgd_highres/100., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
 land = np.full(avgd_highres.shape, np.nan); land[avgd_highres==0] = 1;
-plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 1)
+plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
 
 #% subplot (b)
-ax = plt.subplot(grid[0, 12:], projection=projection)
+ax = plt.subplot(grid[0, 12:], projection=projection)#plt.subplot(2,2,2, projection=projection)
 plt.title('(b) $R_{1m}$', fontsize=fs)
 
 g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
@@ -297,8 +302,8 @@ g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
 g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
 ax.set_extent(exte, ccrs.PlateCarree())
 
-ax.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
-ax.set_xticklabels([0., 90., 180., 270., 360.], fontsize=fs)
+#ax.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
+#ax.set_xticklabels([0., 90., 180., 270., 360.], fontsize=fs)
 lon_formatter = cticker.LongitudeFormatter()
 lat_formatter = cticker.LatitudeFormatter()
 ax.xaxis.set_major_formatter(lon_formatter)
@@ -306,8 +311,8 @@ ax.yaxis.set_major_formatter(lat_formatter)
 ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
 plt.imshow(avgd_mm/100., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
-land = np.full(avgd_mm.shape, np.nan); land[avgd_mm==0] = 1;
-plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 1)
+#land = np.full(avgd.shape, np.nan); land[np.isnan(avgd)] = 1;
+plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
 
 #% subplot (c)
 ax = plt.subplot(grid[1, :12], projection=projection)#plt.subplot(2,2,3, projection=projection)
@@ -337,6 +342,36 @@ ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 im = plt.imshow(avgd_m/100., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
 land = np.full(avgd_m.shape, np.nan); land[np.isnan(avgd_m)] = 1;
 plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
+#% subplot (d)
+ax = plt.subplot(grid[1, 12:], projection=projection)
+plt.title('(d) $R_{1mdb}$, $c_s=%.1f$'%(Cs), fontsize=fs)
+
+g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=1, color='gray', alpha=0.5, linestyle='--')
+g.xlabels_top = False
+g.ylabels_right = False
+g.ylabels_left = False
+g.xlabels_bottom = False
+g.xlabel_style = {'fontsize': fs}
+g.ylabel_style = {'fontsize': fs}
+g.xformatter = LONGITUDE_FORMATTER
+g.yformatter = LATITUDE_FORMATTER
+g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
+g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
+ax.set_extent(exte, ccrs.PlateCarree())
+
+ax.set_xticks([0., 90., 180., 270., 360.], crs=ccrs.PlateCarree())
+ax.set_xticklabels([0., 90., 180., 270., 360.], fontsize=fs)
+lon_formatter = cticker.LongitudeFormatter()
+lat_formatter = cticker.LatitudeFormatter()
+ax.xaxis.set_major_formatter(lon_formatter)
+ax.yaxis.set_major_formatter(lat_formatter)
+ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
+
+im = plt.imshow(avgd_m2/100., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
+#land = np.full(avgd.shape, np.nan); land[np.isnan(avgd)] = 1;
+plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
+
 #%
 sns.set_style("darkgrid")
 sns.set_context("paper")
@@ -344,14 +379,21 @@ fs = 14 # fontsize
 si = 140
 lw = 2 # linewidth
 
+sp1 = 6
+sp2 = 25
+
 color1 = 'k'
 color2 = 'red'
 color3 = 'k'
+#% Load the data
+CS =  np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])#np.array([0.0,0.5, 2.0 ,  3.0,   6.0, 15.0])
+CS50 = np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])#np.array([0.0, 1.5, 3.0, 4.5])
+cs = 1.0
 
 dsWD = [4,7,4,7] # the line dash of the first configuration
 
-ax = plt.subplot(grid[1, 13:])
-plt.title('(d)', fontsize=fs)
+ax = plt.subplot(grid[2, 12:-1])
+plt.title('(e)', fontsize=fs)
 
 plt.xlabel('$c_s$', fontsize=fs)
 
@@ -368,23 +410,23 @@ a0 = sns.lineplot(x=CS, y=np.full(len(CS),avd_temp2), linewidth=lw,
                    color=color2, zorder=1)
 a0.lines[3].set_linestyle(":")
 
-#sns.lineplot(x=CS, y=avd, color=color1, linewidth=lw, zorder=10)
-#sns.scatterplot(x=CS, y=avd, color=color1, s=si, zorder=11)
+sns.lineplot(x=CS, y=avd, color=color1, linewidth=lw, zorder=10)
+sns.scatterplot(x=CS, y=avd, color=color1, s=si, zorder=11)
 sns.lineplot(x=CS,y=avdgm, linewidth = lw, ax=ax, color=color1, 
              zorder=9)
-sns.scatterplot(x=CS,y=avdgm, ax=ax, color=color1, s=si, zorder=10,
-                   legend=False)#, marker="^")
-#sns.lineplot(x=CS50, y=avd50, color=color2, linewidth=lw, zorder=10)
-#sns.scatterplot(x=CS50, y=avd50, color=color2, s=si, zorder=11)
-sns.lineplot(x=CS50,y=avd50gm, linewidth = lw, ax=ax, color=color2)#, 
-#             zorder=9)
-sns.scatterplot(x=CS50,y=avd50gm, ax=ax, color=color2, s=si, zorder=10,
-                   legend=False)#, marker="^")
+sns.scatterplot(x=CS,y=avdgm, ax=ax, color=color1, s=si, zorder=12,
+                   legend=False, marker="^")
+sns.lineplot(x=CS50, y=avd50, color=color2, linewidth=lw, zorder=10)
+sns.scatterplot(x=CS50, y=avd50, color=color2, s=si, zorder=10)
+sns.lineplot(x=CS50,y=avd50gm, linewidth = lw, ax=ax, color=color2, 
+             zorder=9)
+sns.scatterplot(x=CS50,y=avd50gm, ax=ax, color=color2, s=si, zorder=12,
+                   legend=False, marker="^")
 
 ax.set_ylabel('average travel distance (10$^2$ km)', fontsize=fs, color = color1)
 for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(fs)
-ax.set_yticklabels([1,2,3,4,5,6], fontsize=fs, color=color1)
+ax.set_yticklabels([2,3,4,5,6], fontsize=fs, color=color1)
 ax.set_ylim(1,6.4)
 
 
@@ -398,18 +440,17 @@ lw = 2
 colo = 'k'
 legend_el = [Line2D([0], [0], dashes=dsWD, color=colo, lw=lw, label='$R_{0.1}$'), 
              Line2D([0], [0], linestyle=':', color=colo, lw=lw, label='$R_{0.1m}$'), 
-             Line2D([0], [0], linestyle='-', marker='o', markersize=8+1, color=colo, lw=lw, label='$R_{1m}$/ $R_{1md}$'), 
-#             Line2D([0], [0], linestyle='-', marker='^', markersize=8, color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{1mb}$/ $R_{1mdb}$)')
-             ]
-#first_legend = ax.legend(handles=legend_el,loc=4, fontsize=fs, bbox_to_anchor=(0., .15, 1., .102))#, title='Configuration'
-first_legend = ax.legend(handles=legend_el, fontsize=fs, loc='upper right', bbox_to_anchor=(1, -0.1))
+             Line2D([0], [0], linestyle='-', marker='o', markersize=8, color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{1m}$/ $R_{1md}$)'), 
+             Line2D([0], [0], linestyle='-', marker='^', markersize=8, color=colo, lw=lw, label='$W_d(R_{0.1}$, $R_{1mb}$/ $R_{1mdb}$)')]
+#first_legend = plt.legend(handles=legend_el, title='Configuration',loc=4, fontsize=fs, bbox_to_anchor=(0., .3, 1., .202))
+first_legend = ax.legend(handles=legend_el, fontsize=fs, title='Configuration', loc='center right', bbox_to_anchor=(-0.1, 0.2))
 
 ax2 = plt.gca().add_artist(first_legend)
 
 legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
              Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
-#plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .65, 1., .102))
-ax.legend(handles=legend_el, fontsize=fs, loc='upper right', bbox_to_anchor=(0.3, -0.1))
+#plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., -.01, 1., .102))
+ax.legend(handles=legend_el, title='Sinking speed (m/day)', fontsize=fs, loc='center right', bbox_to_anchor=(-0.1, 0.65))
 
 #% final
 #fig.subplots_adjust(bottom=0.17)
@@ -419,8 +460,7 @@ ax.legend(handles=legend_el, fontsize=fs, loc='upper right', bbox_to_anchor=(0.3
 #cbar.ax.xaxis.set_label_position('bottom')
 #cbar.ax.tick_params(labelsize=fs) 
 
-fig.subplots_adjust(bottom=0.17)
-cbar_ax = fig.add_axes([0.135, 0., 0.35, 0.07])
+cbar_ax = fig.add_axes([0.135, 0.285, 0.35, 0.07])
 cbar_ax.set_visible(False)
 cbar = fig.colorbar(im, ax=cbar_ax, orientation = 'horizontal', fraction = 1.2,
                     aspect=18)
@@ -429,5 +469,5 @@ cbar.ax.set_xlabel('$10^2$ km', fontsize=fs)
 cbar.ax.tick_params(labelsize=fs)
 cbar.set_ticklabels([1,2,3]) 
 
-plt.savefig('figure4.pdf',bbox_inches='tight',pad_inches=0)
+plt.savefig('figure4_withandwithoutbolus.pdf',bbox_inches='tight',pad_inches=0)
 plt.show()

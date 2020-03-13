@@ -143,7 +143,7 @@ print('# particles in distribution: ',len(hstemp), len(hstemp2),len(hstemp3),len
 #%% Then the lowres with cs
 
 dirReadlow = '/Volumes/HardDisk/POP/output/lowres/timeseries/'
-nc_lr = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
+nc_lr = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
 
 Lons = nc_lr['Lons'][:]
 Lats = nc_lr['Lats'][:]
@@ -180,7 +180,7 @@ print('# particles in distribution: ',np.sum(0<lstemp), np.sum(0<lstemp2),np.sum
 #%% Then the lowres with cs==0
 cs = 0.0
 dirReadlow = '/Volumes/HardDisk/POP/output/lowres/timeseries/'
-nc_lr = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
+nc_lr = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
 
 Lons = nc_lr['Lons'][:]
 Lats = nc_lr['Lats'][:]
@@ -214,6 +214,7 @@ lstemp30 = nc_lr['temp'][idx3]
 lxs40 = nc_lr['lon'][idx4]
 lys40 = nc_lr['lat'][idx4]
 lstemp40 = nc_lr['temp'][idx4]
+print('# particles in distribution: ',np.sum(0<lstemp0), np.sum(0<lstemp20),np.sum(0<lstemp30),np.sum(0<lstemp40))
 #%% The plot
 fig = plt.figure(figsize=(10,6))
 
