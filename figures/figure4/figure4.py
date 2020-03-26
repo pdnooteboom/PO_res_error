@@ -38,27 +38,9 @@ cmap2 = 'coolwarm' # For the surface area
 cmap3 = 'hot'# For the average travel distance
 vsdist = [0,27]
 vssurf = [0,17]
+sp1 = 6
+sp2 = 25
 #%%
-@jit(nopython=True)
-def find_nearest_index(array,value):
-    idx = (np.abs(array-value)).argmin()
-    return array[idx]
-
-@jit(nopython=True)
-def distance(origin, destination):
-    lat1, lon1 = origin
-    lat2, lon2 = destination
-    radius = 6371.1 # km
-
-    dlat = math.radians(lat2-lat1)
-    dlon = math.radians(lon2-lon1)
-    a = math.sin(dlat/2) * math.sin(dlat/2) + math.cos(math.radians(lat1)) \
-        * math.cos(math.radians(lat2)) * math.sin(dlon/2) * math.sin(dlon/2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    d = radius * c
-
-    return d
-
 def distance_nojit(origin, destination):
     lat1, lon1 = origin
     lat2, lon2 = destination
@@ -73,21 +55,6 @@ def distance_nojit(origin, destination):
 
     return d
 
-@jit(nopython=True)
-def avgdistf(lat, lon, avgdist, tsl, vLons, vLats, ml):
-    for i in range(len(vLons)):
-        dist = 0.
-        n = 0.
-        for j in range(ml):
-           if(lat[i,j]<1000):
-               n += 1.
-               dist += distance([vLats[i], vLons[i]], [lat[i,j], lon[i,j]])
-        if(n>0):
-            avgdist[i] = dist / n
-        else:
-            avgdist[i] = np.nan
-    return avgdist
-
 def mean_latitudeweigthed(avgd, lats):
 #    result = np.nanmean(avgd)
     weights = np.zeros(avgd.shape)
@@ -98,170 +65,61 @@ def mean_latitudeweigthed(avgd, lats):
     avgd[np.isnan(avgd)] = 0
     result = np.average(avgd, weights=weights)
     return result
-
-@jit(nopython=True)
-def uniqueloc(lats, lons, la, lo):
-    bo = True
-    if(len(lons)>0):
-        for i in range(len(lons)):
-            if(lons[i]==lo):
-                if(lats[i]==la):
-                    bo = False
-    return bo
-
-@jit(nopython=True)
-def surfacef(lat, lon, surface, tsl, vLons, vLats, Lons, Lats, ml):
-    res = 1. # resolution of the binning
-    for i in range(len(vLons)):
-        surf = 0.
-        lons = []
-        lats = []
-        for j in range(ml):
-            if(lat[i,j]<1000):
-                lo = find_nearest_index(Lons, lon[i,j])
-                la = find_nearest_index(Lats, lat[i,j])
-                if(uniqueloc(lats, lons, la, lo)):
-                    lats.append(la)
-                    lons.append(lo)
-        for j in range(len(lons)):
-            surf += distance([lats[j]-res/2.,lons[j]-res/2.],[lats[j]-res/2.,lons[j]+res/2.]) * distance([lats[j]+res/2.,lons[j]-res/2.],[lats[j]-res/2.,lons[j]-res/2.])        
-        surface[i] = surf
-    return surface
-
-def calc_fields(name = '', ml=131):
-    ncf = Dataset(name)
-    Lons = ncf['Lons'][:]
-    Lats = ncf['Lats'][:]
-    vLons = ncf['vLons'][:]
-    vLats = ncf['vLats'][:]
-    assert len(Lons)*len(Lats)==len(vLons)    
-    lat = ncf['lat'][:]
-    lon = ncf['lon'][:]
-    tsl = ncf['temp'][:].shape[1]
-
-    avgdist = np.zeros(len(vLons))
-    surface = np.zeros(len(vLons))
-    avgdist = avgdistf(lat, lon, avgdist, tsl, vLons, vLats, ml)
-    surface = surfacef(lat, lon, surface, tsl, vLons, vLats, Lons, Lats, ml)
-    avgdist, surface = avgdist.reshape(len(Lats), len(Lons)), surface.reshape(len(Lats), len(Lons))
-    avgdist = np.concatenate((avgdist[:,180:-2], avgdist[:,:180]),axis=1);
-    surface = np.concatenate((surface[:,180:-2],surface[:,:180]),axis=1);
-    Lons = np.append(Lons[180:-2]-360,Lons[:180])
-    
-    return avgdist,surface, Lons, Lats
 #%% Load all the files
-maxminlat = -76
-minmaxlat = 71
-minmaxlon = 359 - 180
-maxminlon = 0 - 180    
+ncf = Dataset('avgd_surf.nc')
+Lats = ncf['Lats'][:]
+Lons = ncf['Lons'][:]
+CS = ncf['CS'][:]
+idcs = np.where(CS==Cs)[0][0]
 
-avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5_ds2.nc'%(ddeg,sp,dd))
-idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-assert (idxlon==True).all()
-avgd_highres= np.flip(avgd[idxlat],0)
+avgd =  ncf['avgdtemp_hr'][:]
+#avd_temp = np.nanmean(avgd)  / 100
+avd_temp = mean_latitudeweigthed(avgd, Lats) / 100.
 
-avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(0.0,ddeg,sp,dd))
-idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-assert (idxlon==True).all()
-avgd_mm = np.flip(avgd[idxlat],0)
-
-avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(Cs,ddeg,sp,dd))
-idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-assert (idxlon==True).all()
-avgd_m = np.flip(avgd[idxlat],0)
-
-CS =  np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])#np.array([0.0,0.5, 2.0 ,  3.0,   6.0, 15.0])
-CS50 = np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])#np.array([0.0, 1.5, 3.0, 4.5])
-
-avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5_ds2.nc'%(ddeg,sp,dd))
-idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-assert (idxlon==True).all()
-avgd = np.flip(avgd[idxlat],0)
-land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
-avgd[avgd==0] = np.nan
-
-sp1 = 6
-sp2 = 25
-
-avgd_highres[avgd_highres==0] = np.nan
-highres_avgd = mean_latitudeweigthed(avgd_highres, Lats) / 100.
-
-avgd_mm[avgd_mm==0] = np.nan
-avd_temp = mean_latitudeweigthed(avgd_mm, Lats) / 100.
-
-avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp25_dd10_tempresmonmean.nc')
-idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-assert (idxlon==True).all()
-avgd_mm2 = np.flip(avgd[idxlat],0)
+avgd_mm2 =  ncf['avgdtemp_hr25'][:]
 avgd_mm2[avgd_mm2==0] = np.nan
 avd_temp2 = mean_latitudeweigthed(avgd_mm2, Lats) / 100.
+#avd_temp2 = np.nanmean(avgd_mm2) / 100
 
-avd50 = np.zeros(len(CS50))
-avd = np.zeros(len(CS))
-avd50gm = np.zeros(len(CS50))
-avdgm = np.zeros(len(CS))
-for j in range(len(CS)):
-    if(CS[j]!=0.25):
-        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg1_sp%d_dd10.nc'%(CS[j],sp1))
-    else:
-        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.2f_ddeg1_sp%d_dd10.nc'%(CS[j],sp1))
-    idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-    idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-    assert (idxlon==True).all()
-    avgd = np.flip(avgd[idxlat],0)
-    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
-    avgd[avgd==0] = np.nan
-    avd[j] = mean_latitudeweigthed(avgd, Lats)  / 100.
-    if(CS[j]!=0.25):
-        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg1_sp%d_dd10.nc'%(CS[j],sp1))
-    else:
-        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_gm_Cs%.2f_ddeg1_sp%d_dd10.nc'%(CS[j],sp1))
-    idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-    idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-    assert (idxlon==True).all()
-    avgd = np.flip(avgd[idxlat],0)
-    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
-    avgd[avgd==0] = np.nan
-    avdgm[j] = mean_latitudeweigthed(avgd, Lats)  / 100.
-
-for j in range(len(CS50)):
-    if(CS50[j]!=0.25):
-        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.1f_ddeg1_sp%d_dd10.nc'%(CS[j],sp2))
-    else:
-        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_Cs%.2f_ddeg1_sp%d_dd10.nc'%(CS[j],sp2))
-    idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-    idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-    assert (idxlon==True).all()
-    avgd = np.flip(avgd[idxlat],0)
-    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
-    avgd[avgd==0] = np.nan
-    avd50[j] = mean_latitudeweigthed(avgd, Lats)  / 100.
-    if(CS50[j]!=0.25):
-        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg1_sp%d_dd10.nc'%(CS[j],sp2))
-    else:
-        avgd, surf, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/lowres/timeseries/timeseries_per_location_smagorinksi_wn_gm_Cs%.2f_ddeg1_sp%d_dd10.nc'%(CS[j],sp2))
-    idxlat = np.logical_and(Lats>=maxminlat, Lats<=minmaxlat)
-    idxlon = np.logical_and(Lons>=maxminlon, Lons<=minmaxlon)
-    assert (idxlon==True).all()
-    avgd = np.flip(avgd[idxlat],0)
-    land = np.full(avgd.shape, np.nan); land[avgd==0] = 1;
-    avgd[avgd==0] = np.nan
-    avd50gm[j] = mean_latitudeweigthed(avgd, Lats)  / 100.
-
-avgd50, surf50, Lons, Lats = calc_fields(name = '/Volumes/HardDisk/POP/output/highres/timeseries/timeseries_per_location_ddeg1_sp25_dd10_tempresmonmean.nc')
+avgd50 =  ncf['avgd_hr25'][:]
+avgd50[avgd50==0] = np.nan
 avgd50mean = mean_latitudeweigthed(avgd50, Lats) / 100.
+#avd_temp2 = mean_latitudeweigthed(avgd_mm2, Lats) / 100.
+#avgd50mean = np.nanmean(avgd50)   / 100
+
+avgd_highres =  ncf['avgd_hr'][:]
+avgd_highres[avgd_highres==0] = np.nan
+highres_avgd = mean_latitudeweigthed(avgd_highres, Lats) / 100.
+#highres_avgd = np.nanmean(avgd_highres) / 100
+
+avgd_mm =  ncf['avgd_lr'][0]
+avgd_mm[avgd_mm==0] = np.nan
+
+avgd_m =  ncf['avgd_lr'][idcs]
+avgd_m[avgd_m==0] = np.nan
+
+avd50 = np.zeros(len(CS))
+avd = np.zeros(len(CS))
+avd50gm = np.zeros(len(CS))
+avdgm = np.zeros(len(CS))
+
+for i in range(avd.shape[0]):
+    avd[i] = mean_latitudeweigthed(ncf['avgd_lr'][i], Lats) / 100.
+    avd50[i] = mean_latitudeweigthed(ncf['avgd_lr25'][i], Lats) / 100.
+    avdgm[i] = mean_latitudeweigthed(ncf['avgd_gm_lr'][i], Lats) / 100.
+    avd50gm[i] = mean_latitudeweigthed(ncf['avgd_gm_lr25'][i], Lats) / 100.
+    
+#avd = np.nanmean(np.nanmean(ncf['avgd_lr'][:],axis=1),axis=1)  / 100
+#avd50 = np.nanmean(np.nanmean(ncf['avgd_lr25'][:],axis=1),axis=1)  / 100.
+#avdgm = np.nanmean(np.nanmean(ncf['avgd_gm_lr'][:],axis=1),axis=1)  / 100.
+#avd50gm = np.nanmean(np.nanmean(ncf['avgd_gm_lr25'][:],axis=1),axis=1)  / 100
 
 #%% start figure
 fig = plt.figure(figsize=(19,9))
 grid = plt.GridSpec(2, 24, wspace=0., hspace=0.2)
 #% Subplot (a) highres
 ax0 = plt.subplot(grid[0, :12], projection=projection)
-plt.title('(a)$R_{0.1}$', fontsize=fs)
+plt.title('(a) $R_{0.1}$, eddying', fontsize=fs)
 g = ax0.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
@@ -275,13 +133,13 @@ g.xlocator = mticker.FixedLocator([-180,-90, -0, 90, 180])
 g.ylocator = mticker.FixedLocator([-75,-50,-25, 0, 25, 50, 75, 100])
 ax0.set_extent(exte, ccrs.PlateCarree())
 
-plt.imshow(avgd_highres/100., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
-land = np.full(avgd_highres.shape, np.nan); land[avgd_highres==0] = 1;
-plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 1)
+plt.imshow(np.flip(avgd_highres/100.,0), vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
+land = np.full(avgd_highres.shape, np.nan); land[0==avgd_highres] = 1;
+plt.imshow(np.flip(land,0), vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 1)
 
 #% subplot (b)
 ax = plt.subplot(grid[0, 12:], projection=projection)
-plt.title('(b) $R_{1m}$', fontsize=fs)
+plt.title('(b) $R_{1m}$, non-eddying', fontsize=fs)
 
 g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -305,13 +163,13 @@ ax.xaxis.set_major_formatter(lon_formatter)
 ax.yaxis.set_major_formatter(lat_formatter)
 ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
-plt.imshow(avgd_mm/100., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
-land = np.full(avgd_mm.shape, np.nan); land[avgd_mm==0] = 1;
-plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 1)
+plt.imshow(np.flip(avgd_mm/100.,0), vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
+land = np.full(avgd_mm.shape, np.nan); land[np.isnan(avgd_mm)] = 1;
+plt.imshow(np.flip(land,0), vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 1)
 
 #% subplot (c)
 ax = plt.subplot(grid[1, :12], projection=projection)#plt.subplot(2,2,3, projection=projection)
-plt.title('(c) $R_{1md}$, $c_s=%.1f$'%(Cs), fontsize=fs)
+plt.title('(c) $R_{1md}$, non-eddying with diffusion', fontsize=fs)
 
 g = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -334,9 +192,9 @@ ax.xaxis.set_major_formatter(lon_formatter)
 ax.yaxis.set_major_formatter(lat_formatter)
 ax.grid(linewidth=2, color='black', alpha=0., linestyle='--')
 
-im = plt.imshow(avgd_m/100., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
+im = plt.imshow(np.flip(avgd_m,0)/100., vmin=vsdist[0], vmax=vsdist[1], extent = exte2, transform=ccrs.PlateCarree(), cmap=cmap2, zorder = 0)
 land = np.full(avgd_m.shape, np.nan); land[np.isnan(avgd_m)] = 1;
-plt.imshow(land, vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
+plt.imshow(np.flip(land,0), vmin=0, vmax=1.6, extent = exte2, transform=ccrs.PlateCarree(), cmap='binary', zorder = 0)
 #%
 sns.set_style("darkgrid")
 sns.set_context("paper")
@@ -376,9 +234,9 @@ sns.scatterplot(x=CS,y=avdgm, ax=ax, color=color1, s=si, zorder=10,
                    legend=False)#, marker="^")
 #sns.lineplot(x=CS50, y=avd50, color=color2, linewidth=lw, zorder=10)
 #sns.scatterplot(x=CS50, y=avd50, color=color2, s=si, zorder=11)
-sns.lineplot(x=CS50,y=avd50gm, linewidth = lw, ax=ax, color=color2)#, 
+sns.lineplot(x=CS,y=avd50gm, linewidth = lw, ax=ax, color=color2)#, 
 #             zorder=9)
-sns.scatterplot(x=CS50,y=avd50gm, ax=ax, color=color2, s=si, zorder=10,
+sns.scatterplot(x=CS,y=avd50gm, ax=ax, color=color2, s=si, zorder=10,
                    legend=False)#, marker="^")
 
 ax.set_ylabel('average travel distance (10$^2$ km)', fontsize=fs, color = color1)
@@ -406,8 +264,8 @@ first_legend = ax.legend(handles=legend_el, fontsize=fs, loc='upper right', bbox
 
 ax2 = plt.gca().add_artist(first_legend)
 
-legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
-             Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
+legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f$ = 6 m day$^{-1}$'), 
+             Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f$ = 25 m day$^{-1}$')]
 #plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .65, 1., .102))
 ax.legend(handles=legend_el, fontsize=fs, loc='upper right', bbox_to_anchor=(0.3, -0.1))
 
