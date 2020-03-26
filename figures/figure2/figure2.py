@@ -43,7 +43,7 @@ CS =  np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])
 CS50 = np.array([0., 0.25, 0.5, 1.0, 2.0, 5.0])
 cs = 2.0
 
-dirRead = '/Volumes/HardDisk/POP/output/OT/' 
+dirRead = 'Wd_output/' 
 lsq = np.zeros(len(CS))
 lsq50 = np.zeros(len(CS50))
 lsqgm = np.zeros(len(CS))
@@ -184,7 +184,7 @@ grid = plt.GridSpec(2, 24, wspace=0., hspace=0.35)
 ax0 = plt.subplot(grid[0, 12:], projection=projection)#plt.subplot(2,2,2, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs) 
-plt.title('(b) $W_d(R_{0.1}, R_{1m})$', fontsize=fs)
+plt.title('(b) Eddying vs. non-eddying ($W_d(R_{0.1},R_{1m})$)', fontsize=fs)
 #ax0.add_feature(cartopy.feature.LAND, color='gray')
 g = ax0.gridlines( draw_labels=True,crs=ccrs.PlateCarree(central_longitude=180),
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -224,7 +224,7 @@ ax0 = plt.subplot(grid[0, :12], projection=projection)#plt.subplot(2,2,1, projec
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs)
 
-plt.title('(a) $W_d(R_{0.1},R_{0.1m})$', fontsize=fs)
+plt.title('(a) 5-daily vs. monthly model output ($W_d(R_{0.1},R_{0.1m})$)', fontsize=fs)
 ax0.add_feature(cartopy.feature.LAND, color='gray')
 g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
@@ -328,8 +328,8 @@ first_legend = ax.legend(handles=legend_el, fontsize=fs, loc='upper right', bbox
 
 ax2 = plt.gca().add_artist(first_legend)
 
-legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f=6$'), 
-             Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f=25$')]
+legend_el = [Line2D([0], [0], linestyle='solid', color=color1, lw=lw, label='$w_f$ = 6 m day$^{-1}$'), 
+             Line2D([0], [0], linestyle='solid', color=color2, lw=lw, label='$w_f$ = 25 m day$^{-1}$')]
 #plt.legend(handles=legend_el, title='Sinking speed (m/day)',loc=4, fontsize=fs, bbox_to_anchor=(0., .65, 1., .102))
 ax.legend(handles=legend_el, fontsize=fs, loc='upper right', bbox_to_anchor=(0.3, -0.1))
 
@@ -337,7 +337,7 @@ ax.legend(handles=legend_el, fontsize=fs, loc='upper right', bbox_to_anchor=(0.3
 ax0 = plt.subplot(grid[1, :12], projection=projection)#plt.subplot(2,2,3, projection=projection)
 for tick in ax0.xaxis.get_major_ticks():
                 tick.label.set_fontsize(fs)
-plt.title('(c) $W_d(R_{0.1}, R_{1md})$, $c_s=%.1f$'%(cs), fontsize=fs)
+plt.title('(c) Eddying vs. non-eddying with difussion ($W_d(R_{0.1},R_{1md})$)', fontsize=fs)
 g = ax0.gridlines(crs=ccrs.PlateCarree(central_longitude=180), draw_labels=True,
                   linewidth=1, color='gray', alpha=0.5, linestyle='--')
 g.xlabels_top = False
