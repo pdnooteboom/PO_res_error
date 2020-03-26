@@ -14,6 +14,7 @@ import seaborn as sns
 import cartopy
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.ticker as mticker
+from matplotlib.lines import Line2D
 
 def find_nearest(array,value):
     idx = (np.abs(array-value)).argmin()
@@ -23,7 +24,7 @@ sns.set_style("darkgrid")
 sns.set_context("paper")
 
 projection = ccrs.PlateCarree()
-size = 11
+size = 55
 cmap='rainbow'
 
 lat= -49.5
@@ -83,7 +84,7 @@ sp = 6
 dd = 10
 cs = 2.0
 
-fs = 16
+fs = 18
 
 vmin= -2; vmax = 28;
 
@@ -92,7 +93,8 @@ cland = 'k'
 
 ch = 'red'
 cl = 'royalblue'
-cd = 'y'
+cd = 'yellow'
+edgecolor = 'k'
 
 opac = 0.5
 
@@ -100,7 +102,8 @@ xloc = np.arange(-180, 180, 20)
 yloc = np.arange(-90,90,20)
 #%% First the highres
 dirReadhigh = '/Volumes/HardDisk/POP/output/highres/timeseries/'
-nc_hr = Dataset(dirReadhigh + 'timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
+dirRead = '/Users/nooteboom/Documents/PhD/resolution_paper/output/timeseries/'
+nc_hr = Dataset(dirRead + 'timeseries_per_location_ddeg%d_sp%d_dd%d_tempres5.nc'%(ddeg,sp,dd))
 
 
 Lons = nc_hr['Lons'][:]
@@ -143,7 +146,7 @@ print('# particles in distribution: ',len(hstemp), len(hstemp2),len(hstemp3),len
 #%% Then the lowres with cs
 
 dirReadlow = '/Volumes/HardDisk/POP/output/lowres/timeseries/'
-nc_lr = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
+nc_lr = Dataset(dirRead + 'timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
 
 Lons = nc_lr['Lons'][:]
 Lats = nc_lr['Lats'][:]
@@ -180,7 +183,7 @@ print('# particles in distribution: ',np.sum(0<lstemp), np.sum(0<lstemp2),np.sum
 #%% Then the lowres with cs==0
 cs = 0.0
 dirReadlow = '/Volumes/HardDisk/POP/output/lowres/timeseries/'
-nc_lr = Dataset(dirReadlow + 'timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
+nc_lr = Dataset(dirRead + 'timeseries_per_location_smagorinksi_wn_gm_Cs%.1f_ddeg%d_sp%d_dd%d.nc'%(cs,ddeg,sp,dd))
 
 Lons = nc_lr['Lons'][:]
 Lats = nc_lr['Lats'][:]
@@ -216,7 +219,9 @@ lys40 = nc_lr['lat'][idx4]
 lstemp40 = nc_lr['temp'][idx4]
 print('# particles in distribution: ',np.sum(0<lstemp0), np.sum(0<lstemp20),np.sum(0<lstemp30),np.sum(0<lstemp40))
 #%% The plot
-fig = plt.figure(figsize=(10,6))
+plt.rcParams['legend.title_fontsize'] = 14
+
+fig = plt.figure(figsize=(15,9))
 
 ax0 = plt.subplot(2,2,2, projection=projection)
 plt.title('(b)', fontsize=fs)
@@ -228,15 +233,15 @@ g.xlabels_top = False
 g.ylabels_left = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
-g.xlabel_style = {'fontsize': fs-3}
-g.ylabel_style = {'fontsize': fs-3}
+g.xlabel_style = {'fontsize': fs}
+g.ylabel_style = {'fontsize': fs}
 g.xlocator = mticker.FixedLocator(xloc)
 g.ylocator = mticker.FixedLocator(yloc)
 ax0.set_extent(exte, ccrs.PlateCarree())
 
 plt.scatter(hxs, hys, c=ch, s=size, label='0.1', alpha=opac)
 plt.scatter(lxs, lys, c=cl, s=size, label='1', alpha=opac)
-plt.scatter(lxs0, lys0, c=cd, s=size, label='1, cs=0', alpha=opac)
+plt.scatter(lxs0, lys0, c=cd, s=size, label='1, cs=0', alpha=1, edgecolors=edgecolor)#opac)
 plt.scatter(llo+0.5, lla +0.5,c='k', marker='P', s=150)
 
 print('# particles in distribution: ',np.sum(0<hxs[0]), np.sum(0<lxs[0]), np.sum(0<lxs0[0]))
@@ -253,18 +258,18 @@ g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlocator = mticker.FixedLocator(xloc)
 g.ylocator = mticker.FixedLocator(yloc)
-g.xlabel_style = {'fontsize': fs-3}
-g.ylabel_style = {'fontsize': fs-3}
+g.xlabel_style = {'fontsize': fs}
+g.ylabel_style = {'fontsize': fs}
 ax0.set_extent(exte2, ccrs.PlateCarree())
 
 plt.scatter(hxs2, hys2, c=ch, s=size, label='0.1', alpha=opac)
 plt.scatter(lxs2, lys2, c=cl, s=size, label='1', alpha=opac)
-plt.scatter(lxs20, lys20, c=cd, s=size, label='1, cs=0', alpha=opac)
+plt.scatter(lxs20, lys20, c=cd, s=size, label='1, cs=0', alpha=1, edgecolors=edgecolor)#opac)
 plt.scatter(llo2+0.5, lla2+0.5 ,c='k', marker='P', s=150)#'+'
 
 print('# particles in distribution: ',np.sum(0<hxs2[0]), np.sum(0<lxs2[0]), np.sum(0<lxs20[0]))
 #%%
-plt.subplots_adjust(hspace=0.35)
+plt.subplots_adjust(hspace=0.05)
 ax0 = plt.subplot(2,2,3, projection=projection)
 plt.title('(c)', fontsize=fs)
 ax0.add_feature(cartopy.feature.LAND, color=cland)
@@ -275,20 +280,37 @@ g.xlabels_top = False
 g.ylabels_right = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
-g.xlabel_style = {'fontsize': fs-3}
-g.ylabel_style = {'fontsize': fs-3}
+g.xlabel_style = {'fontsize': fs}
+g.ylabel_style = {'fontsize': fs}
 g.xlocator = mticker.FixedLocator(xloc)
 g.ylocator = mticker.FixedLocator(yloc)
 ax0.set_extent(exte3, ccrs.PlateCarree())
 
 plt.scatter(hxs3, hys3, c=ch, s=size, label='$R_{0.1}$', alpha=opac)
 plt.scatter(lxs3, lys3, c=cl, s=size, label='$R_{1md}$', alpha=opac)
-plt.scatter(lxs30, lys30, c=cd, s=size, label='$R_{1m}$', alpha=opac)
+plt.scatter(lxs30, lys30, c=cd, s=size, label='$R_{1m}$', alpha=1, edgecolors=edgecolor)#opac)
 plt.scatter(llo3+0.5, lla3+0.5 ,c='k', marker='P', s=150)#'+'
 
 print('# particles in distribution: ',np.sum(0<hxs3[0]), np.sum(0<lxs3[0]), np.sum(0<lxs30[0]))
       
-plt.legend(loc=4, prop={'size': 10}, title='Configuration')
+#plt.legend(loc=4, prop={'size': 14}, title='Configuration')
+
+legend_el = [Line2D([0], [0],  color='w', marker='o',markerfacecolor=ch, markersize=9 ,
+                    label='$R_{0.1}$'), 
+             Line2D([0], [0], linestyle=':', color='w', marker='o', markersize=9,
+                    markerfacecolor=cl, label='$R_{1md}$'), 
+             Line2D([0], [0], linestyle='-', marker='o', markersize=9,
+                    markerfacecolor=cd, markeredgecolor='k', color='w', 
+                    label='$R_{1m}$'), 
+             ]
+first_legend = ax0.legend(title='Configuration', handles=legend_el, fontsize=fs, 
+                          loc='upper left', bbox_to_anchor=(1.1, -0.1),ncol=3)
+
+ax2 = plt.gca().add_artist(first_legend)
+
+legend_el = [Line2D([0], [0],markerfacecolor='k', marker='P', markersize=14, color='w', label='release location')]
+ax0.legend(handles=legend_el, fontsize=fs, loc='upper left', bbox_to_anchor=(0.55, -0.1))
+
 
 ax0 = plt.subplot(2,2,4, projection=projection)
 plt.title('(d)', fontsize=fs)
@@ -301,15 +323,15 @@ g.ylabels_left = False
 g.xformatter = LONGITUDE_FORMATTER
 g.yformatter = LATITUDE_FORMATTER
 g.xlocator = mticker.FixedLocator(np.arange(exte4[0], exte4[1]+20, 20))
-g.xlabel_style = {'fontsize': fs-3}
-g.ylabel_style = {'fontsize': fs-3}
+g.xlabel_style = {'fontsize': fs}
+g.ylabel_style = {'fontsize': fs}
 g.xlocator = mticker.FixedLocator(xloc)
 g.ylocator = mticker.FixedLocator(yloc)
 ax0.set_extent(exte4, ccrs.PlateCarree())
 
 plt.scatter(hxs4, hys4, c=ch, s=size, label='0.1', alpha=opac)
 plt.scatter(lxs4, lys4, c=cl, s=size, label='1', alpha=opac)
-plt.scatter(lxs40, lys40, c=cd, s=size, label='1, cs=0', alpha=opac)
+plt.scatter(lxs40, lys40, c=cd, s=size, label='1, cs=0', alpha=1, edgecolors=edgecolor)#opac)
 plt.scatter(llo4+0.5, lla4+0.5 ,c='k', marker='P', s=150)#'+'
 print('# particles in distribution: ',np.sum(0<hxs4[0]), np.sum(0<lxs4[0]), np.sum(0<lxs40[0]))
 #%%
